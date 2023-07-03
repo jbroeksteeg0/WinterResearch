@@ -144,8 +144,7 @@ void populate_graph(std::string data_file, int iteration) {
 
 auto node_cmp = [](State a, State b) { return a.time < b.time; };
 
-std::map<std::string, std::vector<State>> node_states;
-
+std::map<std::string, NDTree<State, 3>> node_states;
 void shortest_paths() {
 
   int n = graph.get_num_nodes();
@@ -157,14 +156,33 @@ void shortest_paths() {
   std::queue<State> q;
   q.push(initial_state);
 
-  node_states["R-D"].push_back(initial_state);
+  for (const std::string &name : graph.get_node_names()) {
+    node_states.insert(
+      {name,
+       NDTree<State, 3>({
+         std::make_pair(0, 1500),     // time
+         std::make_pair(0, 200),      // load
+         std::make_pair(-5e4, 5e4)    // cost TODO change
+       })}
+    );
+  }
+
+  // Add the initial state
+  node_states.find("R-D")->second.add(
+    {(double)initial_state.time, initial_state.load, initial_state.cost}, initial_state
+  );
 
   double ans = 0.0;
+
+  int iterations = 0;
 
   while (q.size()) {
     State curr_state = q.front();
     q.pop();
     // std::cout << curr_state.to_string() << std::endl;
+    iterations++;
+    if (iterations % 100000 == 0)
+      std::cout << iterations << " iterations" << std::endl;
 
     if (curr_state.node == "R-D")
       ans = std::min(ans, curr_state.cost);
@@ -205,51 +223,27 @@ void shortest_paths() {
         new_seen,                                     // nodes seen
         curr_state.cost + graph.get_cost(from, to)    // cost
       );
-
-      auto check_iter = node_states[to].begin();
       bool add_state = true;
+      std::vector<State> possible_better_states;
+      node_states.find(to)->second.query_prefix(
+        {(double)new_state.time, new_state.load, new_state.cost}, possible_better_states
+      );
 
-      int cnt = 0;
-      for (auto state : node_states[to]) {
-        if (state.time <= curr_state.time && state.cost <= curr_state.cost && state.load <=
-        curr_state.load) {
-          cnt++;
+      for (const auto &check_state : possible_better_states) {
+        if (check_state.nodes_seen.is_subset_of(new_state.nodes_seen)) {
+          add_state = false;
+          break;
         }
       }
 
-      int cnt2 = 0;
-      for (auto state : node_states[to]) {
-        if (state.time > curr_state.time && state.cost > curr_state.cost && state.load > curr_state.load) {
-          cnt2++;
-        }
-      }
-
-      std::set<int> to_delete;
-      for (int i = 0; i < node_states[to].size(); i++) {
-        auto check_iter = node_states[to].begin() + i;
-        if (check_iter->time <= new_state.time) {
-          if (check_iter->dominates(new_state)) {
-            add_state = false;
-            break;
-          }
-        } else {
-          if (new_state.dominates(*check_iter)) {
-            to_delete.insert(i);
-          }
-        }
-      }
-
-      assert(!(to_delete.size() && !add_state));
-      std::vector<State> temp;
-      for (int i = 0; i < node_states[to].size(); i++) {
-        if (to_delete.find(i) == to_delete.end()) {
-          temp.push_back(node_states[to][i]);
-        }
-      }
-      node_states[to] = temp;
+      // std::cout << "Checking " << possible_better_states.size() << " out of "
+      //           << node_states.find(to)->second.size() << ": " << add_state << std::endl;
 
       if (add_state) {
-        node_states[to].push_back(new_state);
+        // Add the new state
+        node_states.find(to)->second.add(
+          {(double)new_state.time, new_state.load, new_state.cost}, new_state
+        );
         q.push(new_state);
       }
     }

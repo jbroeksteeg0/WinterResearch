@@ -8,8 +8,11 @@
 #include <utility>
 #include <vector>
 
+#define EPS ((double)0.0000001)
+
 template <typename T, int N> class NDTree {
 public:
+  NDTree() = delete;
   NDTree(std::array<std::pair<double, double>, N> bounds) {
     m_bounds = bounds;
     m_count = 0;
@@ -19,11 +22,25 @@ public:
     }
   }
   bool is_subdivided() const { return m_nodes[0] != nullptr; }
+  size_t size() const { return m_count; }
   void add(std::array<double, N> coords, T value) {
+    // std::cout << "Adding (";
+    // for (int i = 0; i < N; i++)
+    //   std::cout << coords[i] << ", ";
+    // std::cout << ")\n";
+
+    // for (int i = 0; i < N; i++) {
+    //   std::cout << "(" << m_bounds[i].first << "," << m_bounds[i].second << ") ";
+    // }
+    // std::cout << std::endl;
+
+    for (int i = 0; i < N; i++) {
+      assert(coords[i] >= m_bounds[i].first && coords[i] <= m_bounds[i].second);
+    }
+
     if (m_count == 0 && !is_subdivided()) {
       m_value = {value, coords};
     } else {    // subdivide
-
       std::optional<std::pair<T, std::array<double, N>>> old_value = m_value;
 
       // Subdivide if not already done
@@ -37,7 +54,7 @@ public:
           for (int bit = 0; bit < N; bit++) {
             if (mask & (1 << bit)) {    // positive direction
               new_bounds[bit] = std::make_pair(
-                (m_bounds[bit].first + m_bounds[bit].second) / 2, m_bounds[bit].second
+                (m_bounds[bit].first + m_bounds[bit].second) / 2 + EPS, m_bounds[bit].second
               );
             } else {    // negative direction
               new_bounds[bit] = std::make_pair(
@@ -59,11 +76,11 @@ public:
           new_bounds[bit] = m_nodes[mask]->m_bounds[bit];
 
           curr_in_new_bounds &=
-            (new_bounds[bit].first <= coords[bit] && new_bounds[bit].second > coords[bit]);
+            (new_bounds[bit].first <= coords[bit] && new_bounds[bit].second >= coords[bit]);
 
           old_in_new_bounds &=
             (old_value.has_value() && new_bounds[bit].first <= old_value->second[bit]
-             && new_bounds[bit].second > old_value->second[bit]);
+             && new_bounds[bit].second >= old_value->second[bit]);
         }
 
         if (curr_in_new_bounds) {
@@ -73,13 +90,16 @@ public:
           m_nodes[mask]->add(old_value->second, old_value->first);
         }
       }
-
-      // find child with new value in it
     }
     m_count++;
   }
 
   void query_prefix(std::array<double, N> bounds, std::vector<T> &output) {
+
+    for (int i = 0; i < N; i++) {
+      assert(bounds[i] >= m_bounds[i].first && bounds[i] <= m_bounds[i].second);
+    }
+
     // Empty
     if (m_count == 0) {
       return;
@@ -88,7 +108,7 @@ public:
     if (!is_subdivided()) {
       bool in_bounds = true;
       for (int i = 0; i < N; i++) {
-        in_bounds &= m_value->second[i] < bounds[i];
+        in_bounds &= m_value->second[i] <= bounds[i];
       }
 
       if (in_bounds && m_value.has_value()) {
@@ -103,7 +123,7 @@ public:
       for (int bit = 0; bit < N; bit++) {
         std::pair<double, double> new_bounds = m_nodes[mask]->m_bounds[bit];
 
-        in_new_bounds &= bounds[bit] >= new_bounds.first;
+        in_new_bounds &= bounds[bit] >= new_bounds.first && bounds[bit] <= new_bounds.second;
       }
       if (in_new_bounds) {
         m_nodes[mask]->query_prefix(bounds, output);
@@ -130,7 +150,7 @@ public:
         assert(m_nodes[mask] != nullptr);
 
         in_new_bounds &=
-          (new_bounds[bit].first <= coords[bit] && new_bounds[bit].second > coords[bit]);
+          (new_bounds[bit].first <= coords[bit] && new_bounds[bit].second >= coords[bit]);
       }
 
       if (in_new_bounds) {

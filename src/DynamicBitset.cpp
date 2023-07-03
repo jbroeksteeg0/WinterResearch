@@ -10,7 +10,7 @@ DynamicBitset::DynamicBitset(size_t size) : m_size(size) {
 }
 
 bool DynamicBitset::get(size_t bit) const {
-  assert(bit >= 0 && bit < m_size);
+  assert(bit < (size_t)m_size);
 
   // The int the bit is stored in
   int int_value = m_elems[bit / 8];
@@ -36,7 +36,7 @@ bool DynamicBitset::is_superset_of(const DynamicBitset &other) const {
 }
 
 void DynamicBitset::set(size_t bit, bool value) {
-  assert(bit >= 0 && bit < m_size);
+  assert(bit < (size_t)m_size);
 
   // The ind of the int the bit is stored in
   int int_ind = bit / 8;
