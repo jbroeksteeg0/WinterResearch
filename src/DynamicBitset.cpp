@@ -13,16 +13,16 @@ bool DynamicBitset::get(size_t bit) const {
   assert(bit < (size_t)m_size);
 
   // The int the bit is stored in
-  int int_value = m_elems[bit / 8];
+  int int_value = m_elems[bit / 64];
 
   // Return its value
-  return int_value & (1 << (bit % 8));
+  return int_value & (1 << (bit % 64));
 }
 
 bool DynamicBitset::is_subset_of(const DynamicBitset &other) const {
   assert(m_size == other.m_size);
 
-  for (size_t i = 0; i < (m_size + 7) / 8; i++) {
+  for (size_t i = 0; i < (m_size + 63) / 64; i++) {
     if ((m_elems[i] & other.m_elems[i]) != m_elems[i]) {
       return false;
     }
@@ -39,9 +39,9 @@ void DynamicBitset::set(size_t bit, bool value) {
   assert(bit < (size_t)m_size);
 
   // The ind of the int the bit is stored in
-  int int_ind = bit / 8;
+  int int_ind = bit / 64;
 
-  int mask = 1 << (bit % 8);
+  int mask = ((int64_t)1) << (bit % 64);
 
   // Setting it to true
   if (value) {
@@ -56,9 +56,9 @@ size_t DynamicBitset::get_size() const { return m_size; }
 std::string DynamicBitset::to_string() const {
   std::string ret = "";
   for (size_t i = 0; i < m_size; i++) {
-    int8_t num = m_elems[i / 8];
+    int64_t num = m_elems[i / 64];
 
-    ret += std::to_string((num & (1 << (i % 8))) != 0);
+    ret += std::to_string((num & (1 << (i % 64))) != 0);
   }
 
   return ret;

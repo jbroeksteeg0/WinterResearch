@@ -145,7 +145,8 @@ void populate_graph(std::string data_file, int iteration) {
 
 auto node_cmp = [](State a, State b) { return a.time < b.time; };
 
-std::map<std::string, NDTree<State, 2>> node_states;
+//                                     bitmask, double
+std::map<std::string, NDTree<std::pair<int64_t, double>, 3>> node_states;
 void shortest_paths() {
   int n = graph.get_num_nodes();
   std::vector<std::string> node_names = graph.get_node_names();
@@ -153,22 +154,24 @@ void shortest_paths() {
   //                          name, time, load, num nodes, cost
   State initial_state = State("R-D", 0, 0.0, n, 0.0);
 
-  std::queue<State> q;
-  q.push(initial_state);
+  std::deque<State> q;
+  q.push_back(initial_state);
 
   for (const std::string &name : graph.get_node_names()) {
     node_states.insert(
       {name,
-       NDTree<State, 2>({
-         std::make_pair(0, 1500),    // time
-         std::make_pair(0, 200)      // load
+       NDTree<std::pair<int64_t, double>, 3>({
+         std::make_pair(0, 1500),     // time
+         std::make_pair(0, 200),      // load
+         std::make_pair(-1e4, 1e4)    // cost
        })}
     );
   }
 
   // Add the initial state
   node_states.find("R-D")->second.add(
-    {(double)initial_state.time, initial_state.load}, initial_state
+    {(double)initial_state.time, initial_state.load},
+    {initial_state.nodes_seen.m_elems[0], initial_state.cost}
   );
 
   double ans = 0.0;
@@ -177,7 +180,7 @@ void shortest_paths() {
 
   while (q.size()) {
     State curr_state = q.front();
-    q.pop();
+    q.pop_front();
     // std::cout << curr_state.to_string() << std::endl;
     iterations++;
     if (iterations % 10000 == 0)
@@ -227,19 +230,19 @@ void shortest_paths() {
         node_states.find(to)->second.query_prefix({(double)new_state.time, new_state.load});
 
       for (const auto &check_state : possible_better_states) {
-        if (check_state.nodes_seen.is_subset_of(new_state.nodes_seen) && check_state.cost < new_state.cost) {
+        if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second < new_state.cost) {
           add_state = false;
           break;
         }
       }
 
-      // std::cout << "Checking " << possible_better_states.size() << " out of "
-      //           << node_states.find(to)->second.size() << ": " << add_state << std::endl;
-
       if (add_state) {
         // Add the new state
-        node_states.find(to)->second.add({(double)new_state.time, new_state.load}, new_state);
-        q.push(new_state);
+        node_states.find(to)->second.add(
+          {(double)new_state.time, new_state.load},
+          {new_state.nodes_seen.m_elems[0], new_state.cost}
+        );
+        q.push_back(new_state);
       }
     }
   }

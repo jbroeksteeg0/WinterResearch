@@ -16,10 +16,10 @@ public:
   size_t get_size() const;
   std::string to_string() const;
 
+  int64_t m_elems[2];
+
 private:
   size_t m_size;
-
-  int8_t m_elems[16];
 
   friend class State;
 };
