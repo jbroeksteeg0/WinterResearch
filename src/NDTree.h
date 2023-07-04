@@ -23,7 +23,11 @@ public:
     }
 
     m_iter_count = new int(0);
-    m_value_map = new std::unordered_map<int, std::pair<std::array<double, N>, std::vector<T>>>();
+    m_value_map = new std::vector<std::pair<std::array<double, N>, std::vector<T>>>();
+    m_value_map->reserve(1024);
+    call_cnt = new int(0);
+    // m_value_map = new std::unordered_map<int, std::pair<std::array<double, N>,
+    // std::vector<T>>>();
   }
   bool is_subdivided() const { return m_nodes[0] != nullptr; }
   size_t size() const { return m_count; }
@@ -54,7 +58,7 @@ public:
         }
       }
 
-      m_nodes[mask] = new NDTree<T, N>(new_bounds, m_iter_count, m_value_map);
+      m_nodes[mask] = new NDTree<T, N>(new_bounds, m_iter_count, m_value_map, call_cnt);
     }
   }
 
@@ -65,19 +69,16 @@ public:
 
     // EMPTY LEAF, CREATE A NEW VEC
     if (m_count == 0 && !is_subdivided()) {
-      m_value = ++(*m_iter_count);
-      (*m_value_map)[*m_value].first = coords;
-      (*m_value_map)[*m_value].second.push_back(value);
+      m_value = (*m_iter_count)++;
+      m_value_map->push_back(std::make_pair(coords, std::vector<T>{value}));
+      m_value_map->back().second.reserve(1024);
+      // (*m_value_map)[*m_value].first = coords;
+      // (*m_value_map)[*m_value].second.push_back(value);
     } else if (m_count > 0 && !is_subdivided()) {
       // LEAF WITH VALUES, POSSIBLY SPLIT
       assert(m_value.has_value());
       auto leaf_coords = (*m_value_map)[*m_value].first;
-      // for (auto d : leaf_coords)
-      //   std::cout << d << " ";
-      // std::cout << std::endl;
-      // for (auto d : coords)
-      //   std::cout << d << " ";
-      // std::cout << std::endl;
+
       if (coords == leaf_coords) {
         // DON'T NEED TO SPLIT
         (*m_value_map)[*m_value].second.push_back(value);
@@ -105,21 +106,24 @@ public:
   }
 
   void query_prefix(std::array<double, N> bounds, std::vector<T> &output) {
-    for (int i = 0; i < N; i++) {
-      assert(bounds[i] >= m_bounds[i].first /* && bounds[i] <= m_bounds[i].second*/);
-    }
-
+    // for (int i = 0; i < N; i++) {
+    //   assert(bounds[i] >= m_bounds[i].first /* && bounds[i] <= m_bounds[i].second*/);
+    // }
     // Empty
+
+    (*call_cnt)++;
+    // if (*call_cnt % 1000000 == 0)
+    std::cout << *call_cnt << std::endl;
     if (m_count == 0) {
       return;
     }
 
     if (!is_subdivided()) {
-
       if (m_value.has_value()) {
         bool in_bounds = true;
+        auto other_bounds = (*m_value_map)[*m_value].first;
         for (int i = 0; i < N; i++) {
-          in_bounds &= (*m_value_map)[*m_value].first[i] <= bounds[i];
+          in_bounds &= other_bounds[i] <= bounds[i];
         }
 
         if (in_bounds && m_value.has_value()) {
@@ -133,14 +137,11 @@ public:
     // recurse
     for (int mask = 0; mask < (1 << N); mask++) {
       bool in_new_bounds = true;
+      auto new_bounds = m_nodes[mask]->m_bounds;
       for (int bit = 0; bit < N; bit++) {
-        std::pair<double, double> new_bounds = m_nodes[mask]->m_bounds[bit];
-
-        in_new_bounds &= bounds[bit] >= new_bounds.first;
+        in_new_bounds &= bounds[bit] >= new_bounds[bit].first;
       }
-      if (in_new_bounds) {
-        // std::cout << "Looking for coords " << bounds[0] << "," << bounds[1] << std::endl;
-        // std::cout << "Mask " << mask << " is good" << std::endl;
+      if (in_new_bounds && m_nodes[mask]->m_count > 0) {
         m_nodes[mask]->query_prefix(bounds, output);
       }
     }
@@ -198,14 +199,16 @@ private:
   std::optional<int> m_value;
   int m_count;
   int *m_iter_count = nullptr;
+  int *call_cnt;
 
-  std::unordered_map<int, std::pair<std::array<double, N>, std::vector<T>>> *m_value_map;
+  std::vector<std::pair<std::array<double, N>, std::vector<T>>> *m_value_map;
 
 private:
   NDTree(
     std::array<std::pair<double, double>, N> bounds,
     int *iter_count,
-    std::unordered_map<int, std::pair<std::array<double, N>, std::vector<T>>> *value_map
+    std::vector<std::pair<std::array<double, N>, std::vector<T>>> *value_map,
+    int *call_cnt_p
   ) {
     m_bounds = bounds;
     m_count = 0;
@@ -215,6 +218,7 @@ private:
     }
     m_iter_count = iter_count;
     m_value_map = value_map;
+    call_cnt = call_cnt_p;
   }
 
   void set_ind(int ind) {
