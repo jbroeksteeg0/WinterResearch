@@ -27,20 +27,15 @@ int main() {
         double y = unif(re);
         int value = rand() % 10000;
         cout << "Add " << x << "," << y << ": " << value << endl;
-        bool in = any_of(points.begin(), points.end(), [&](auto p) {
-          return (std::get<0>(p) == x) && (get<1>(p) == y);
-        });
 
-        if (!in) {
-          points.push_back({x, y, value});
-          tree.add({(double)x, (double)y}, value);
-        }
+        points.push_back({x, y, value});
+        tree.add({(double)x, (double)y}, value);
       } else if (oper == 1) {    // delete point
         if (points.size()) {
           int ind = rand() % points.size();
           auto del = points[ind];
           std::cout << "Del " << get<0>(del) << ", " << get<1>(del) << endl;
-          tree.delete_point({(double)get<0>(del), (double)get<1>(del)});
+          tree.delete_point({(double)get<0>(del), (double)get<1>(del)}, get<2>(del));
           points.erase(points.begin() + ind);
         }
       } else if (oper == 2) {
@@ -57,9 +52,11 @@ int main() {
           tree.query_prefix({(double)xBound, (double)yBound}, points2);
 
           sort(points1.begin(), points1.end());
+          std::cout << "Without tree: ";
           for (int i : points1)
             std::cout << i << " ";
           std::cout << std::endl;
+          std::cout << "With tree: ";
           sort(points2.begin(), points2.end());
           for (int i : points2)
             std::cout << i << " ";

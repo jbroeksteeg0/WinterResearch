@@ -253,6 +253,23 @@ void shortest_paths() {
 }
 
 int main(int argc, char **argv) {
+
+  NDTree<int, 2> tree({std::make_pair(0, 100), std::make_pair(0, 100)});
+  tree.add({5.0, 5.0}, 2);
+  tree.add({5.0, 5.0}, 3);
+
+  std::cout << "before delete" << std::endl;
+  tree.delete_point({5.0, 5.0}, 3);
+  tree.delete_point({5.0, 5.0}, 2);
+  std::cout << "after delete" << std::endl;
+  std::vector<int> ans;
+  tree.query_prefix({10.0, 10.0}, ans);
+
+  for (int i : ans)
+    std::cout << i << " ";
+  std::cout << std::endl;
+
+  return 1;
   if (argc < 3) {
     std::cout << "Run with filename and number of iterations" << std::endl;
     return 1;
