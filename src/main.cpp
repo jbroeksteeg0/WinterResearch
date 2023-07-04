@@ -1,6 +1,7 @@
 #include "DynamicBitset.h"
 #include "Graph.h"
-#include "NDTree.h"
+// #include "NDTree.h"
+#include "NDTreeIterative.h"
 #include "State.h"
 #include <algorithm>
 #include <cassert>
@@ -144,9 +145,8 @@ void populate_graph(std::string data_file, int iteration) {
 
 auto node_cmp = [](State a, State b) { return a.time < b.time; };
 
-std::map<std::string, NDTree<State, 3>> node_states;
+std::map<std::string, NDTree<State, 2>> node_states;
 void shortest_paths() {
-
   int n = graph.get_num_nodes();
   std::vector<std::string> node_names = graph.get_node_names();
 
@@ -159,17 +159,16 @@ void shortest_paths() {
   for (const std::string &name : graph.get_node_names()) {
     node_states.insert(
       {name,
-       NDTree<State, 3>({
-         std::make_pair(0, 1500),     // time
-         std::make_pair(0, 200),      // load
-         std::make_pair(-5e4, 5e4)    // cost TODO change
+       NDTree<State, 2>({
+         std::make_pair(0, 1500),    // time
+         std::make_pair(0, 200)      // load
        })}
     );
   }
 
   // Add the initial state
   node_states.find("R-D")->second.add(
-    {(double)initial_state.time, initial_state.load, initial_state.cost}, initial_state
+    {(double)initial_state.time, initial_state.load}, initial_state
   );
 
   double ans = 0.0;
@@ -224,13 +223,11 @@ void shortest_paths() {
         curr_state.cost + graph.get_cost(from, to)    // cost
       );
       bool add_state = true;
-      std::vector<State> possible_better_states;
-      node_states.find(to)->second.query_prefix(
-        {(double)new_state.time, new_state.load, new_state.cost}, possible_better_states
-      );
+      auto possible_better_states =
+        node_states.find(to)->second.query_prefix({(double)new_state.time, new_state.load});
 
       for (const auto &check_state : possible_better_states) {
-        if (check_state.nodes_seen.is_subset_of(new_state.nodes_seen)) {
+        if (check_state.nodes_seen.is_subset_of(new_state.nodes_seen) && check_state.cost < new_state.cost) {
           add_state = false;
           break;
         }
@@ -241,9 +238,7 @@ void shortest_paths() {
 
       if (add_state) {
         // Add the new state
-        node_states.find(to)->second.add(
-          {(double)new_state.time, new_state.load, new_state.cost}, new_state
-        );
+        node_states.find(to)->second.add({(double)new_state.time, new_state.load}, new_state);
         q.push(new_state);
       }
     }
@@ -253,14 +248,6 @@ void shortest_paths() {
 }
 
 int main(int argc, char **argv) {
-  srand(time(0));
-  NDTree<int, 2> tree({std::make_pair(0, 1000), std::make_pair(0, 1000)});
-  for (int i = 0; i < 1000; i++)
-    tree.add({(double)(rand() % 1000), (double)(rand() % 1000)}, 1);
-  std::vector<int> o;
-  tree.query_prefix({500.0, 500.0}, o);
-  std::cout << o.size() << std::endl;
-  return 0;
   if (argc < 3) {
     std::cout << "Run with filename and number of iterations" << std::endl;
     return 1;
