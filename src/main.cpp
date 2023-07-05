@@ -145,7 +145,7 @@ void populate_graph(std::string data_file, int iteration) {
 }
 
 //                                     bitmask, double
-std::array<NDTree<std::pair<__int128, float>, 3>, NUM_NODES> node_states;
+std::array<NDTree<std::pair<__int128, float>, 2>, NUM_NODES> node_states;
 void shortest_paths() {
   int n = graph.get_num_nodes();
 
@@ -157,10 +157,9 @@ void shortest_paths() {
 
   std::vector<std::string> names = graph.get_node_names();
   for (int i = 0; i < names.size(); i++) {
-    node_states[i] = NDTree<std::pair<__int128, float>, 3>({
-      std::make_pair(0, 1500),     // time
-      std::make_pair(0, 200),      // load
-      std::make_pair(-1e4, 1e4)    // cost
+    node_states[i] = NDTree<std::pair<__int128, float>, 2>({
+      std::make_pair(0, 1500),    // time
+      std::make_pair(0, 200),     // load
     });
   }
 
@@ -233,7 +232,7 @@ void shortest_paths() {
       // assert(possible_better_states.size() == p2.size());
 
       for (const auto &check_state : possible_better_states) {
-        if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second < new_state.cost) {
+        if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second <= new_state.cost) {
           add_state = false;
           break;
         }

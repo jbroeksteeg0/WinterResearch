@@ -5,7 +5,7 @@
 #include <queue>
 #include <vector>
 
-#define NUM_TREE_NODES 20000
+#define NUM_TREE_NODES 40000
 #define EPS ((double)1e-20)
 
 template <typename T, int N> class NDTree;
@@ -106,7 +106,7 @@ public:
   }
 
   void query_prefix_dfs(std::array<double, N> coords, std::vector<T> &ans) {
-    ans.reserve(20);
+    ans.reserve(30);
     //                    at,  child to look at
     std::array<std::pair<int, int>, 20> dfs;
     dfs[0] = {0, 0};
