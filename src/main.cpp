@@ -148,7 +148,6 @@ void populate_graph(std::string data_file, int iteration) {
 std::array<NDTree<std::pair<__int128, double>, 3>, NUM_NODES> node_states;
 void shortest_paths() {
   int n = graph.get_num_nodes();
-  std::vector<std::string> node_names = graph.get_node_names();
 
   //                          name, time, load, num nodes, cost
   State initial_state = State(0, 0, 0.0, n, 0.0);
@@ -159,10 +158,10 @@ void shortest_paths() {
   std::vector<std::string> names = graph.get_node_names();
   for (int i = 0; i < names.size(); i++) {
     node_states[i] = NDTree<std::pair<__int128, double>, 3>({
-	         std::make_pair(0, 1500),     // time
-         std::make_pair(0, 200),      // load
-         std::make_pair(-1e4, 1e4)    // cost
-      });
+      std::make_pair(0, 1500),     // time
+      std::make_pair(0, 200),      // load
+      std::make_pair(-1e4, 1e4)    // cost
+    });
   }
 
   // Add the initial state
@@ -223,10 +222,13 @@ void shortest_paths() {
       );
       bool add_state = true;
 
-      std::string to_name = graph.get_node_names()[to];
+      std::string to_name = names[to];
 
       auto possible_better_states =
-        node_states[to].query_prefix({(double)new_state.time, new_state.load});
+        node_states[to].query_prefix_dfs({(double)new_state.time, new_state.load});
+      // auto p2 = node_states[to].query_prefix({(double)new_state.time, new_state.load});
+
+      // assert(possible_better_states.size() == p2.size());
 
       for (const auto &check_state : possible_better_states) {
         if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second < new_state.cost) {
@@ -250,6 +252,18 @@ void shortest_paths() {
 }
 
 int main(int argc, char **argv) {
+  // NDTree<int, 1> tree({std::make_pair(0, 10)});
+
+  // tree.add({1}, 1);
+  // tree.add({4}, 2);
+  // tree.add({9}, 9);
+
+  // std::cout << "Answer: ";
+  // for (auto d : tree.query_prefix_dfs({6})) {
+  //   std::cout << d << " ";
+  // }
+  // std::cout << std::endl;
+  // return 0;
   if (argc < 3) {
     std::cout << "Run with filename and number of iterations" << std::endl;
     return 1;

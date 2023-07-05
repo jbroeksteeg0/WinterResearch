@@ -15,6 +15,7 @@ int main() {
   while (true) {
     cout << endl << endl << endl << endl << endl;
     NDTree<int, 2> tree({make_pair(-100, 100), make_pair(-100, 100)});
+    NDTree<int, 2> tree2({make_pair(-100, 100), make_pair(-100, 100)});
     vector<tuple<double, double, int>> points;
 
     for (int iter = 0; iter < 1e5; iter++) {
@@ -30,7 +31,8 @@ int main() {
 
         points.push_back({x, y, value});
         tree.add({(double)x, (double)y}, value);
-      } else if (oper == 1) {    // delete point
+        tree2.add({(double)x, (double)y}, value);
+      } else if (oper == 1 && false) {    // delete point
         if (points.size()) {
           int ind = rand() % points.size();
           auto del = points[ind];

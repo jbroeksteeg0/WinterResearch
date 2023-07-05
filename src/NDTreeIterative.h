@@ -5,7 +5,7 @@
 #include <queue>
 #include <vector>
 
-#define NUM_TREE_NODES 1000000
+#define NUM_TREE_NODES 80000
 #define EPS ((double)1e-20)
 
 template <typename T, int N> class NDTree;
@@ -105,6 +105,68 @@ public:
     }
   }
 
+  std::vector<T> query_prefix_dfs(std::array<double, N> coords) {
+    std::vector<T> ans;
+
+    //                    at,  child to look at
+    std::vector<std::pair<int, int>> dfs;
+    dfs.reserve(50);
+    dfs.push_back({0, 0});
+    ans.reserve(100);
+
+    while (dfs.size()) {
+      assert(dfs.size() <= 20);
+      int curr_node = dfs.back().first;
+      // std::cout << "Looking at range: ";
+
+      if (dfs.back().second >= (1 << N) || (m_nodes[curr_node].m_is_leaf && dfs.back().second > 0)) {
+        dfs.pop_back();
+        if (dfs.size())
+          dfs.back().second++;
+
+        continue;
+      }
+      // // Iterate over all children
+      // for (int i = 0; i < N; i++) {
+      //   std::cout << m_nodes[curr_node].m_bounds[i].first << ","
+      //             << m_nodes[curr_node].m_bounds[i].second << " ";
+      // }
+      // std::cout << std::endl;
+
+      // Look at all the children, then pop
+      if (m_nodes[curr_node].m_is_leaf) {
+        if (m_nodes[curr_node].m_index_in_map != -1) {
+          bool in_bounds = true;
+          int ind = m_nodes[curr_node].m_index_in_map;
+          for (int i = 0; i < N; i++) {
+            in_bounds &= coords[i] >= m_value_map[ind].first[i];
+          }
+
+          if (in_bounds) {
+            for (auto t : m_value_map[m_nodes[curr_node].m_index_in_map].second) {
+              ans.push_back(t);
+            }
+          }
+        }
+        dfs.pop_back();
+        if (dfs.size())
+          dfs.back().second++;
+      } else {    // Iterate over all subtrees
+        int new_ind = m_nodes[curr_node].m_children[dfs.back().second];
+
+        bool new_range_contains = true;
+        auto new_bounds = m_nodes[new_ind].m_bounds;
+        for (int i = 0; i < N; i++) {
+          new_range_contains &= coords[i] >= new_bounds[i].first;
+        }
+        if (new_range_contains)
+          dfs.push_back({new_ind, 0});
+        else
+          dfs.back().second++;
+      }
+    }
+    return ans;
+  }
   std::vector<T> query_prefix(std::array<double, N> coords) {
     std::vector<T> ans;
 
