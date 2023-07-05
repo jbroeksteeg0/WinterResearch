@@ -32,19 +32,6 @@
       "-std=c++20",
       "-o",
       "main",
-      "src/Location.cpp"
-    ],
-    "directory": "/home/school/Dropbox/WinterResearch",
-    "file": "/home/school/Dropbox/WinterResearch/src/Location.cpp",
-    "output": "/home/school/Dropbox/WinterResearch/main"
-  },
-  {
-    "arguments": [
-      "/usr/bin/g++",
-      "-c",
-      "-std=c++20",
-      "-o",
-      "main",
       "src/main.cpp"
     ],
     "directory": "/home/school/Dropbox/WinterResearch",

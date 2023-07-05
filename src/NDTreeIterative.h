@@ -5,7 +5,7 @@
 #include <queue>
 #include <vector>
 
-#define NUM_NODES 500000
+#define NUM_TREE_NODES 1000000
 #define EPS ((double)1e-20)
 
 template <typename T, int N> class NDTree;
@@ -37,9 +37,14 @@ private:
 
 template <typename T, int N> class NDTree {
 public:
+  NDTree() {    // this should never be used
+    std::array<std::pair<double, double>, N> bounds;
+    m_nodes.resize(NUM_TREE_NODES);
+    m_nodes[m_node_counter++] = NDNode<T, N>(bounds);
+  }
   NDTree(std::array<std::pair<double, double>, N> bounds) {
     // Initialise root node
-    m_nodes.resize(NUM_NODES);
+    m_nodes.resize(NUM_TREE_NODES);
     m_nodes[m_node_counter++] = NDNode<T, N>(bounds);
     m_value_map.reserve(1e5);
   }
@@ -175,6 +180,6 @@ private:
 
       m_node_counter++;
     }
-    assert(m_node_counter < NUM_NODES);
+    assert(m_node_counter < NUM_TREE_NODES);
   }
 };

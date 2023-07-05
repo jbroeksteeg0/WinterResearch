@@ -6,7 +6,7 @@
 #include <set>
 #include <vector>
 
-#define NUM_NODES 100
+#define NUM_NODES 102
 
 struct Node {
   int x, y;
@@ -54,9 +54,7 @@ public:
   Node get_node_data(int name) const;
 
 private:
-  std::map<std::string, Node> m_nodes;
   std::array<Node, NUM_NODES + 1> m_nodes_;
-  std::map<std::pair<std::string, std::string>, double> m_dist;
   std::array<std::array<int, NUM_NODES + 1>, NUM_NODES + 1> m_dist_;
   std::vector<std::string> m_node_names;
 };
