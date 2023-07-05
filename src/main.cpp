@@ -128,22 +128,20 @@ void populate_graph(std::string data_file, int iteration) {
     );
   }
 
-  // Add all possible edges into the graph
-  for (auto location1 = location_names.begin(); location1 != location_names.end(); location1++) {
-    for (auto location2 = location_names.begin(); location2 != location_names.end(); location2++) {
-      if (location1 != location2) {
-        double dx = node_location[*location1].first - node_location[*location2].first;
-        double dy = node_location[*location1].second - node_location[*location2].second;
+  for (int i = 0; i < location_names.size(); i++) {
+    for (int j = 0; j < location_names.size(); j++) {
+      if (i != j) {
+        double dx = node_location[location_names[i]].first - node_location[location_names[j]].first;
+        double dy =
+          node_location[location_names[i]].second - node_location[location_names[j]].second;
 
         double dist = std::sqrt(dx * dx + dy * dy);
 
-        graph.add_edge(*location1, *location2, ceil(dist));
+        graph.add_edge(i, j, ceil(dist));
       }
     }
   }
 }
-
-auto node_cmp = [](State a, State b) { return a.time < b.time; };
 
 //                                     bitmask, double
 std::map<std::string, NDTree<std::pair<__int128, double>, 3>> node_states;
@@ -152,7 +150,7 @@ void shortest_paths() {
   std::vector<std::string> node_names = graph.get_node_names();
 
   //                          name, time, load, num nodes, cost
-  State initial_state = State("R-D", 0, 0.0, n, 0.0);
+  State initial_state = State(0, 0, 0.0, n, 0.0);
 
   std::deque<State> q;
   q.push_back(initial_state);
@@ -177,7 +175,6 @@ void shortest_paths() {
   double ans = 0.0;
 
   int iterations = 0;
-
   while (q.size()) {
     State curr_state = q.front();
     q.pop_front();
@@ -186,11 +183,11 @@ void shortest_paths() {
     if (iterations % 10000 == 0)
       std::cout << iterations << " iterations" << std::endl;
 
-    if (curr_state.node == "R-D")
+    if (curr_state.node == 0)
       ans = std::min(ans, curr_state.cost);
 
-    const std::string from = curr_state.node;
-    for (const auto &to : node_names) {
+    int from = curr_state.node;
+    for (int to = 0; to < n; to++) {
       if (from == to)
         continue;
 
@@ -226,8 +223,11 @@ void shortest_paths() {
         curr_state.cost + graph.get_cost(from, to)    // cost
       );
       bool add_state = true;
+
+      std::string to_name = graph.get_node_names()[to];
+
       auto possible_better_states =
-        node_states.find(to)->second.query_prefix({(double)new_state.time, new_state.load});
+        node_states.find(to_name)->second.query_prefix({(double)new_state.time, new_state.load});
 
       for (const auto &check_state : possible_better_states) {
         if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second < new_state.cost) {
@@ -238,7 +238,7 @@ void shortest_paths() {
 
       if (add_state) {
         // Add the new state
-        node_states.find(to)->second.add(
+        node_states.find(to_name)->second.add(
           {(double)new_state.time, new_state.load},
           {new_state.nodes_seen.m_elems[0], new_state.cost}
         );

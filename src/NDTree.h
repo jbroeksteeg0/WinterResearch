@@ -17,6 +17,7 @@ template <typename T, int N> std::vector<NDTree<T, N>> nodes;
 
 template <typename T, int N> class NDTree {
 public:
+  NDTree() {}
   NDTree(std::array<std::pair<double, double>, N> bounds) {
     m_bounds = bounds;
     m_count = 0;

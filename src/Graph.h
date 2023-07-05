@@ -1,8 +1,12 @@
 #pragma once
 
+#include <array>
 #include <iostream>
 #include <map>
+#include <set>
 #include <vector>
+
+#define NUM_NODES 100
 
 struct Node {
   int x, y;
@@ -37,20 +41,22 @@ public:
     int index
   );
 
-  void add_edge(std::string a, std::string b, int distance);
+  void add_edge(int a, int b, int distance);
 
-  double get_distance(std::string a, std::string b) const;
-  double get_cost(std::string a, std::string b) const;
+  double get_distance(int a, int b) const;
+  double get_cost(int a, int b) const;
   int get_num_nodes() const;
-  int get_node_unpack_time(const std::string &name) const;
-  double get_node_load(const std::string &name) const;
-  std::pair<int, int> get_node_times(const std::string &name) const;
-  bool node_exists(const std::string &name) const;
+  int get_node_unpack_time(int name) const;
+  double get_node_load(int name) const;
+  std::pair<int, int> get_node_times(int name) const;
   std::vector<std::string> get_node_names() const;
-  int get_node_ind(const std::string &name) const;
-  Node get_node_data(const std::string &name) const;
+  int get_node_ind(int name) const;
+  Node get_node_data(int name) const;
 
 private:
   std::map<std::string, Node> m_nodes;
+  std::array<Node, NUM_NODES + 1> m_nodes_;
   std::map<std::pair<std::string, std::string>, double> m_dist;
+  std::array<std::array<int, NUM_NODES + 1>, NUM_NODES + 1> m_dist_;
+  std::vector<std::string> m_node_names;
 };

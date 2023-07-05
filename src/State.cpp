@@ -13,8 +13,7 @@
 //   seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 // }
 
-State::State(std::string node, int time, double load, DynamicBitset seen, double cost)
-    : nodes_seen(seen) {
+State::State(int node, int time, double load, DynamicBitset seen, double cost) : nodes_seen(seen) {
   this->node = node;
   this->time = time;
   this->load = load;
