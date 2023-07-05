@@ -146,7 +146,7 @@ void populate_graph(std::string data_file, int iteration) {
 auto node_cmp = [](State a, State b) { return a.time < b.time; };
 
 //                                     bitmask, double
-std::map<std::string, NDTree<std::pair<int64_t, double>, 3>> node_states;
+std::map<std::string, NDTree<std::pair<__int128, double>, 3>> node_states;
 void shortest_paths() {
   int n = graph.get_num_nodes();
   std::vector<std::string> node_names = graph.get_node_names();
@@ -160,7 +160,7 @@ void shortest_paths() {
   for (const std::string &name : graph.get_node_names()) {
     node_states.insert(
       {name,
-       NDTree<std::pair<int64_t, double>, 3>({
+       NDTree<std::pair<__int128, double>, 3>({
          std::make_pair(0, 1500),     // time
          std::make_pair(0, 200),      // load
          std::make_pair(-1e4, 1e4)    // cost

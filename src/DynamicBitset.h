@@ -16,7 +16,7 @@ public:
   size_t get_size() const;
   std::string to_string() const;
 
-  int64_t m_elems[2];
+  __int128 m_elems[1];
 
 private:
   size_t m_size;
