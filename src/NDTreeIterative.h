@@ -107,13 +107,11 @@ public:
 
   std::vector<T> query_prefix_dfs(std::array<double, N> coords) {
     std::vector<T> ans;
-
+    ans.reserve(20);
     //                    at,  child to look at
     std::array<std::pair<int, int>, 20> dfs;
     dfs[0] = {0, 0};
     int dfs_pointer = 0;
-
-    ans.reserve(100);
 
     while (dfs_pointer >= 0) {
       assert(dfs_pointer + 1 <= 20);
@@ -127,14 +125,7 @@ public:
 
         continue;
       }
-      // // Iterate over all children
-      // for (int i = 0; i < N; i++) {
-      //   std::cout << m_nodes[curr_node].m_bounds[i].first << ","
-      //             << m_nodes[curr_node].m_bounds[i].second << " ";
-      // }
-      // std::cout << std::endl;
 
-      // Look at all the children, then pop
       if (m_nodes[curr_node].m_is_leaf) {
         if (m_nodes[curr_node].m_index_in_map != -1) {
           bool in_bounds = true;
@@ -145,7 +136,7 @@ public:
 
           if (in_bounds) {
             for (auto t : m_value_map[m_nodes[curr_node].m_index_in_map].second) {
-              ans.push_back(t);
+              ans.push_back(std::move(t));
             }
           }
         }
