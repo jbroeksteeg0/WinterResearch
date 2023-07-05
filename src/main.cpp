@@ -145,7 +145,7 @@ void populate_graph(std::string data_file, int iteration) {
 }
 
 //                                     bitmask, double
-std::array<NDTree<std::pair<__int128, float>, 2>, NUM_NODES> node_states;
+std::array<NDTree<std::pair<int32_t, float>, 2>, NUM_NODES> node_states;
 void shortest_paths() {
   int n = graph.get_num_nodes();
 
@@ -157,7 +157,7 @@ void shortest_paths() {
 
   std::vector<std::string> names = graph.get_node_names();
   for (int i = 0; i < names.size(); i++) {
-    node_states[i] = NDTree<std::pair<__int128, float>, 2>({
+    node_states[i] = NDTree<std::pair<int32_t, float>, 2>({
       std::make_pair(0, 1500),    // time
       std::make_pair(0, 200),     // load
     });
@@ -223,7 +223,7 @@ void shortest_paths() {
 
       std::string to_name = names[to];
 
-      std::vector<std::pair<__int128, float>> possible_better_states;
+      std::vector<std::pair<int32_t, float>> possible_better_states;
       node_states[to].query_prefix_dfs(
         {(double)new_state.time, new_state.load}, possible_better_states
       );
