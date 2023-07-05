@@ -224,8 +224,10 @@ void shortest_paths() {
 
       std::string to_name = names[to];
 
-      auto possible_better_states =
-        node_states[to].query_prefix_dfs({(double)new_state.time, new_state.load});
+      std::vector<std::pair<__int128, double>> possible_better_states;
+      node_states[to].query_prefix_dfs(
+        {(double)new_state.time, new_state.load}, possible_better_states
+      );
       // auto p2 = node_states[to].query_prefix({(double)new_state.time, new_state.load});
 
       // assert(possible_better_states.size() == p2.size());
