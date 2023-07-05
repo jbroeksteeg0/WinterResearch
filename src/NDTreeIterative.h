@@ -109,20 +109,21 @@ public:
     std::vector<T> ans;
 
     //                    at,  child to look at
-    std::vector<std::pair<int, int>> dfs;
-    dfs.reserve(50);
-    dfs.push_back({0, 0});
+    std::array<std::pair<int, int>, 20> dfs;
+    dfs[0] = {0, 0};
+    int dfs_pointer = 0;
+
     ans.reserve(100);
 
-    while (dfs.size()) {
-      assert(dfs.size() <= 20);
-      int curr_node = dfs.back().first;
+    while (dfs_pointer >= 0) {
+      assert(dfs_pointer + 1 <= 20);
+      int curr_node = dfs[dfs_pointer].first;
       // std::cout << "Looking at range: ";
 
-      if (dfs.back().second >= (1 << N) || (m_nodes[curr_node].m_is_leaf && dfs.back().second > 0)) {
-        dfs.pop_back();
-        if (dfs.size())
-          dfs.back().second++;
+      if (dfs[dfs_pointer].second >= (1 << N) || (m_nodes[curr_node].m_is_leaf && dfs[dfs_pointer].second > 0)) {
+        dfs_pointer--;
+        if (dfs_pointer >= 0)
+          dfs[dfs_pointer].second++;
 
         continue;
       }
@@ -148,11 +149,11 @@ public:
             }
           }
         }
-        dfs.pop_back();
-        if (dfs.size())
-          dfs.back().second++;
+        dfs_pointer--;
+        if (dfs_pointer >= 0)
+          dfs[dfs_pointer].second++;
       } else {    // Iterate over all subtrees
-        int new_ind = m_nodes[curr_node].m_children[dfs.back().second];
+        int new_ind = m_nodes[curr_node].m_children[dfs[dfs_pointer].second];
 
         bool new_range_contains = true;
         auto new_bounds = m_nodes[new_ind].m_bounds;
@@ -160,9 +161,9 @@ public:
           new_range_contains &= coords[i] >= new_bounds[i].first;
         }
         if (new_range_contains)
-          dfs.push_back({new_ind, 0});
+          dfs[++dfs_pointer] = {new_ind, 0};
         else
-          dfs.back().second++;
+          dfs[dfs_pointer].second++;
       }
     }
     return ans;
