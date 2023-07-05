@@ -115,7 +115,7 @@ public:
 
     while (dfs_pointer >= 0) {
       assert(dfs_pointer + 1 <= 20);
-      int curr_node = dfs[dfs_pointer].first;
+      const int curr_node = dfs[dfs_pointer].first;
       // std::cout << "Looking at range: ";
 
       if (dfs[dfs_pointer].second >= (1 << N) || (m_nodes[curr_node].m_is_leaf && dfs[dfs_pointer].second > 0)) {
