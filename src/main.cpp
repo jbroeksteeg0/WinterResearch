@@ -16,6 +16,8 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <type_traits>
+#include <typeinfo>
 #include <unordered_map>
 
 /*
@@ -29,6 +31,7 @@
 */
 int vehicle_capacity;
 Graph graph;
+int num_nodes;
 
 void populate_graph(std::string data_file, int iteration) {
   std::string data_filename = "Archive/solomon_instances/" + data_file + ".txt";
@@ -142,12 +145,13 @@ void populate_graph(std::string data_file, int iteration) {
       }
     }
   }
+  num_nodes = graph.get_num_nodes();
 }
 
 //                                     bitmask, double
-std::array<NDTree<std::pair<__int128, float>, 2>, NUM_NODES> node_states;
-void shortest_paths() {
+template <typename IntType> void shortest_paths() {
   int n = graph.get_num_nodes();
+  std::array<NDTree<std::pair<IntType, float>, 2>, NUM_NODES> node_states;
 
   //                          name, time, load, num nodes, cost
   State initial_state = State(0, 0, 0.0, n, 0.0);
@@ -157,7 +161,7 @@ void shortest_paths() {
 
   std::vector<std::string> names = graph.get_node_names();
   for (int i = 0; i < names.size(); i++) {
-    node_states[i] = NDTree<std::pair<__int128, float>, 2>({
+    node_states[i] = NDTree<std::pair<IntType, float>, 2>({
       std::make_pair(0, 1500),    // time
       std::make_pair(0, 200),     // load
     });
@@ -223,7 +227,7 @@ void shortest_paths() {
 
       std::string to_name = names[to];
 
-      std::vector<std::pair<__int128, float>> possible_better_states;
+      std::vector<std::pair<IntType, float>> possible_better_states;
       possible_better_states.reserve(100);
       std::vector<int> ans_inds;
       node_states[to].query_prefix_dfs({(double)new_state.time, new_state.load}, ans_inds);
@@ -283,6 +287,13 @@ int main(int argc, char **argv) {
   std::cout << std::fixed;
 
   populate_graph(file_name, iterations);
-  shortest_paths();
+
+  if (num_nodes <= 32) {
+    shortest_paths<int32_t>();
+  } else if (num_nodes <= 64) {
+    shortest_paths<int64_t>();
+  } else {
+    shortest_paths<__int128>();
+  }
   return 0;
 }
