@@ -224,17 +224,16 @@ void shortest_paths() {
       std::string to_name = names[to];
 
       std::vector<std::pair<__int128, float>> possible_better_states;
-      node_states[to].query_prefix_dfs(
-        {(double)new_state.time, new_state.load}, possible_better_states
-      );
-      // auto p2 = node_states[to].query_prefix({(double)new_state.time, new_state.load});
+      possible_better_states.reserve(100);
+      std::vector<int> ans_inds;
+      node_states[to].query_prefix_dfs({(double)new_state.time, new_state.load}, ans_inds);
 
-      // assert(possible_better_states.size() == p2.size());
-
-      for (const auto &check_state : possible_better_states) {
-        if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second <= new_state.cost) {
-          add_state = false;
-          break;
+      for (int i : ans_inds) {
+        for (const auto &check_state : node_states[to].m_value_map[i].second) {
+          if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second <= new_state.cost) {
+            add_state = false;
+            break;
+          }
         }
       }
 

@@ -37,6 +37,9 @@ private:
 
 template <typename T, int N> class NDTree {
 public:
+  std::vector<std::pair<std::array<double, N>, std::vector<T>>> m_value_map;
+
+public:
   NDTree() {    // this should never be used
     std::array<std::pair<double, double>, N> bounds;
     m_nodes.resize(NUM_TREE_NODES);
@@ -105,8 +108,7 @@ public:
     }
   }
 
-  void query_prefix_dfs(std::array<double, N> coords, std::vector<T> &ans) {
-    ans.reserve(30);
+  void query_prefix_dfs(std::array<double, N> coords, std::vector<int> &ans_inds) {
     //                    at,  child to look at
     std::array<std::pair<int, int>, 20> dfs;
     dfs[0] = {0, 0};
@@ -134,9 +136,7 @@ public:
           }
 
           if (in_bounds) {
-            for (auto t : m_value_map[m_nodes[curr_node].m_index_in_map].second) {
-              ans.push_back(std::move(t));
-            }
+            ans_inds.push_back(ind);
           }
         }
         dfs_pointer--;
@@ -203,7 +203,6 @@ public:
 private:
   // std::array<NDNode<T, N>, NUM_NODES> m_nodes;
   std::vector<NDNode<T, N>> m_nodes;
-  std::vector<std::pair<std::array<double, N>, std::vector<T>>> m_value_map;
   int m_node_counter = 0, m_map_index_counter = 0;
 
 private:
