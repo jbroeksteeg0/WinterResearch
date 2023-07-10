@@ -1,4 +1,3 @@
-#include "DynamicBitset.h"
 #include "Graph.h"
 // #include "NDTree.h"
 #include "NDTreeIterative.h"
@@ -161,8 +160,8 @@ template <typename IntType> void shortest_paths() {
 
   // ========================= Initialise variables for the bfs
   int n = graph.get_num_nodes();
-  State initial_state = State(0, 0, 0.0, n, 0.0);
-  std::priority_queue<State> q;
+  State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
+  std::priority_queue<State<IntType>> q;
   q.push(initial_state);
 
   // ========================== Push the initial state
@@ -210,8 +209,8 @@ template <typename IntType> void shortest_paths() {
       if (new_time > to_node.open_times.second)
         continue;
 
-      __int128 new_seen = curr_state.nodes_seen;
-      new_seen |= (((__int128)1) << to_node.index);
+      IntType new_seen = curr_state.nodes_seen;
+      new_seen |= (((IntType)1) << to_node.index);
 
       State new_state = State(
         to,                                           // position

@@ -1,13 +1,17 @@
 #pragma once
-#include "DynamicBitset.h"
 #include <iostream>
 
-struct State {
+template <typename IntType> struct State {
   State();
-  State(int node, int time, double load, __int128 seen, double cost);
+  State(int node, int time, double load, IntType seen, double cost) : nodes_seen(seen) {
+    this->node = node;
+    this->time = time;
+    this->load = load;
+    this->cost = cost;
+  }
   State(const State &other) = default;
 
-  bool has_been_to(size_t node) const;
+  bool has_been_to(size_t node) const { return nodes_seen & (((IntType)1) << node); }
   bool operator<(const State other) const { return time >= other.time; };
   bool operator>(const State other) const;
   bool operator==(const State other) const;
@@ -20,5 +24,5 @@ struct State {
   int64_t hash;
   double load;
   double cost;
-  __int128 nodes_seen;
+  IntType nodes_seen;
 };
