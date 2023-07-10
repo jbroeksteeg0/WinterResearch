@@ -17,7 +17,10 @@ template <typename IntType> struct State {
   bool operator==(const State<IntType> &other) const = default;
   bool dominates(const State other) const;
 
-  std::string to_string() const { return std::to_string(node) + " " + std::to_string(time); };
+  std::string to_string() const {
+    return std::to_string(node) + " " + std::to_string(time) + ", cost " + std::to_string(cost)
+           + " load " + std::to_string(load);
+  };
 
   int node;
   int time;

@@ -5,8 +5,8 @@
 #include <queue>
 #include <vector>
 
-#define NUM_TREE_NODES 40000
-#define EPS ((double)1e-20)
+#define NUM_TREE_NODES 400000
+#define EPS ((float)1e-10)
 
 template <typename T, int N> class NDTree;
 
@@ -15,15 +15,15 @@ public:
   int m_index_in_map = -1;
   int size = 0;
   std::array<int, 1 << N> m_children;
-  std::array<std::pair<double, double>, N> m_bounds;
+  std::array<std::pair<float, float>, N> m_bounds;
   bool m_is_leaf = true;
 
   NDNode() {}
 
 private:
-  NDNode(std::array<std::pair<double, double>, N> bounds) { m_bounds = bounds; }
+  NDNode(std::array<std::pair<float, float>, N> bounds) { m_bounds = bounds; }
 
-  inline int get_child_mask(std::array<double, N> coords) const noexcept {
+  inline int get_child_mask(std::array<float, N> coords) const noexcept {
     assert(!m_is_leaf);
     int mask = 0;
     for (int i = 0; i < N; i++) {
@@ -38,22 +38,22 @@ private:
 
 template <typename T, int N> class NDTree {
 public:
-  std::vector<std::pair<std::array<double, N>, std::vector<T>>> m_value_map;
+  std::vector<std::pair<std::array<float, N>, std::vector<T>>> m_value_map;
 
 public:
   NDTree() {    // this should never be used
-    std::array<std::pair<double, double>, N> bounds;
+    std::array<std::pair<float, float>, N> bounds;
     m_nodes.resize(NUM_TREE_NODES);
     m_nodes[m_node_counter++] = NDNode<T, N>(bounds);
   }
-  NDTree(std::array<std::pair<double, double>, N> bounds) {
+  NDTree(std::array<std::pair<float, float>, N> bounds) {
     // Initialise root node
     m_nodes.resize(NUM_TREE_NODES);
     m_nodes[m_node_counter++] = NDNode<T, N>(bounds);
     m_value_map.reserve(1e5);
   }
 
-  void add(std::array<double, N> coordinates, T value) {
+  void add(std::array<float, N> coordinates, T value) {
     int curr_node = 0;
 
     int depth = 1;
@@ -69,7 +69,7 @@ public:
     int map_index = m_nodes[curr_node].m_index_in_map;
     // If it has a value already, you have to handle
     if (map_index != -1) {
-      std::array<double, N> &old_node_coords = m_value_map[map_index].first;
+      std::array<float, N> &old_node_coords = m_value_map[map_index].first;
       // If the coord is the same, add to vector
       bool is_eq = true;
       for (int i = 0; i < N; i++) {
@@ -118,7 +118,7 @@ public:
     }
   }
 
-  void query_prefix_dfs(std::array<double, N> coords, std::vector<int> &ans_inds) {
+  void query_prefix_dfs(std::array<float, N> coords, std::vector<int> &ans_inds) {
     //                    at,  child to look at
     std::array<std::pair<int, int>, 30> dfs;
     dfs[0] = {0, 0};
@@ -168,7 +168,7 @@ public:
       }
     }
   }
-  std::vector<T> query_prefix(std::array<double, N> coords) {
+  std::vector<T> query_prefix(std::array<float, N> coords) {
     std::vector<T> ans;
 
     std::deque<int> bfs;
@@ -222,8 +222,8 @@ private:
 
     for (int mask = 0; mask < (1 << N); mask++) {
       // Calculate the new bounds
-      std::array<std::pair<double, double>, N> new_bounds;
-      std::array<std::pair<double, double>, N> old_bounds = m_nodes[node].m_bounds;
+      std::array<std::pair<float, float>, N> new_bounds;
+      std::array<std::pair<float, float>, N> old_bounds = m_nodes[node].m_bounds;
       for (int bit = 0; bit < N; bit++) {
         if ((mask & (1 << bit)) == 0) {    // negative direction
           new_bounds[bit] = std::make_pair(
