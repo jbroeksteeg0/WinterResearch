@@ -13,6 +13,7 @@ template <typename T, int N> class NDTree;
 template <typename T, int N> struct NDNode {
 public:
   int m_index_in_map = -1;
+  int size = 0;
   std::array<int, 1 << N> m_children;
   std::array<std::pair<double, double>, N> m_bounds;
   bool m_is_leaf = true;
@@ -55,20 +56,26 @@ public:
   void add(std::array<double, N> coordinates, T value) {
     int curr_node = 0;
 
+    int depth = 1;
     // Recurse until a leaf is found
     while (!m_nodes[curr_node].m_is_leaf) {
       // Find child to go to
       int direction_mask = m_nodes[curr_node].get_child_mask(coordinates);
-
+      m_nodes[curr_node].size++;
       curr_node = m_nodes[curr_node].m_children[direction_mask];
+      depth++;
     }
 
     int map_index = m_nodes[curr_node].m_index_in_map;
     // If it has a value already, you have to handle
     if (map_index != -1) {
-      std::array<double, N> old_node_coords = m_value_map[map_index].first;
+      std::array<double, N> &old_node_coords = m_value_map[map_index].first;
       // If the coord is the same, add to vector
-      if (m_value_map[map_index].first == coordinates) {
+      bool is_eq = true;
+      for (int i = 0; i < N; i++) {
+        is_eq &= abs(m_value_map[map_index].first[i] - coordinates[i]) <= 1e-6;
+      }
+      if (is_eq) {
         m_value_map[map_index].second.push_back(value);
       } else {    // Otherwise, need to split and delegate them
         split(curr_node);
@@ -76,7 +83,8 @@ public:
         while (m_nodes[curr_node].get_child_mask(coordinates)
                == m_nodes[curr_node].get_child_mask(old_node_coords)) {
           int direction = m_nodes[curr_node].get_child_mask(coordinates);
-
+          depth++;
+          m_nodes[curr_node].size++;
           curr_node = m_nodes[curr_node].m_children[direction];
           split(curr_node);
         }
@@ -90,12 +98,14 @@ public:
 
         // Set the pointer to the old one
         m_nodes[old_node_ind].m_index_in_map = map_index;
+        m_nodes[old_node_ind].size++;
+        m_nodes[new_node_ind].size++;
 
         // Create a pointer to the new one
         m_nodes[new_node_ind].m_index_in_map = m_map_index_counter;
         m_value_map.push_back(std::make_pair(coordinates, std::vector<T>{value}));
         m_map_index_counter++;
-
+        assert(depth < 30);
         assert(curr_node != old_node_ind && curr_node != new_node_ind);
         m_nodes[curr_node].m_index_in_map = -1;
       }
@@ -110,12 +120,12 @@ public:
 
   void query_prefix_dfs(std::array<double, N> coords, std::vector<int> &ans_inds) {
     //                    at,  child to look at
-    std::array<std::pair<int, int>, 20> dfs;
+    std::array<std::pair<int, int>, 30> dfs;
     dfs[0] = {0, 0};
     int dfs_pointer = 0;
 
     while (dfs_pointer >= 0) {
-      assert(dfs_pointer + 1 <= 20);
+      assert(dfs_pointer + 1 <= 30);
       const int curr_node = dfs[dfs_pointer].first;
       // std::cout << "Looking at range: ";
 
@@ -136,7 +146,8 @@ public:
           }
 
           if (in_bounds) {
-            ans_inds.push_back(ind);
+            for (int i : m_value_map[ind].second)
+              ans_inds.push_back(i);
           }
         }
         dfs_pointer--;
@@ -146,11 +157,11 @@ public:
         int new_ind = m_nodes[curr_node].m_children[dfs[dfs_pointer].second];
 
         bool new_range_contains = true;
-        auto new_bounds = m_nodes[new_ind].m_bounds;
+        auto &new_bounds = m_nodes[new_ind].m_bounds;
         for (int i = 0; i < N; i++) {
           new_range_contains &= coords[i] >= new_bounds[i].first;
         }
-        if (new_range_contains)
+        if (new_range_contains && m_nodes[new_ind].size)
           dfs[++dfs_pointer] = {new_ind, 0};
         else
           dfs[dfs_pointer].second++;

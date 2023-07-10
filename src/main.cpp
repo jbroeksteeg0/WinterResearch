@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -156,7 +157,7 @@ template <typename IntType> void shortest_paths() {
   for (size_t i = 0; i < names.size(); i++) {
     node_states[i] = NDTree<int, 2>(
       {std::make_pair(0, 201),    // load,
-       std::make_pair(0, 15001)}
+       std::make_pair(-1e4, 1e4)}
     );
   }
 
@@ -168,11 +169,12 @@ template <typename IntType> void shortest_paths() {
   int q_pointer = 0;
 
   // ========================== Push the initial state
-  node_states[0].add({initial_state.load, (double)initial_state.time}, 0);
+  node_states[0].add({initial_state.load, (double)initial_state.cost}, 0);
 
   double ans = 0.0;
   int iterations = 0;
   int skipped = 0;
+
   // ========================== Run the BFS
   while (q_pointer < all_states.size()) {
     State<IntType> curr_state = all_states[q_pointer];
@@ -224,27 +226,26 @@ template <typename IntType> void shortest_paths() {
         new_seen,                                     // nodes seen
         curr_state.cost + graph.get_cost(from, to)    // cost
       );
+
       bool add_state = true;
 
       // ========================== Query the ND Tree for possibly dominating states
       std::vector<int> ans_inds;
-      node_states[to].query_prefix_dfs({new_state.load, (double)new_state.time}, ans_inds);
+      node_states[to].query_prefix_dfs({new_state.load, (double)new_state.cost}, ans_inds);
 
-      for (int leaf_id : ans_inds) {
-        for (int node_id : node_states[to].m_value_map[leaf_id].second) {
-          const auto check_state = all_states[node_id];
-          // ========================== If this previous state dominates, exit early
-          if ((check_state.nodes_seen & new_state.nodes_seen) == check_state.nodes_seen && check_state.cost <= new_state.cost) {
-            add_state = false;
-            break;
-          }
+      for (int node_id : ans_inds) {
+        const auto &check_state = all_states[node_id];
+        // ========================== If this previous state dominates, exit early
+        if ((check_state.nodes_seen & new_state.nodes_seen) == check_state.nodes_seen && check_state.time <= new_state.time) {
+          add_state = false;
+          break;
         }
       }
 
       if (add_state) {
         // ========================== If this state has not been dominated, add it
         all_states.push_back(new_state);
-        node_states[to].add({new_state.load, (double)new_state.time}, all_states.size() - 1);
+        node_states[to].add({new_state.load, (double)new_state.cost}, all_states.size() - 1);
       }
     }
   }
