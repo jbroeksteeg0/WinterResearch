@@ -112,7 +112,7 @@ void populate_graph(std::string data_file, int iteration) {
   }
   std::ifstream bias_file = std::ifstream(biases_filename);
 
-  for (int i = 1; i < location_names.size(); i++) {
+  for (size_t i = 1; i < location_names.size(); i++) {
     float bias;
     bias_file >> bias;
 
@@ -132,8 +132,8 @@ void populate_graph(std::string data_file, int iteration) {
     );
   }
 
-  for (int i = 0; i < location_names.size(); i++) {
-    for (int j = 0; j < location_names.size(); j++) {
+  for (size_t i = 0; i < location_names.size(); i++) {
+    for (size_t j = 0; j < location_names.size(); j++) {
       if (i != j) {
         double dx = node_location[location_names[i]].first - node_location[location_names[j]].first;
         double dy =
@@ -148,38 +148,37 @@ void populate_graph(std::string data_file, int iteration) {
   num_nodes = graph.get_num_nodes();
 }
 
-//                                     bitmask, double
 template <typename IntType> void shortest_paths() {
-  int n = graph.get_num_nodes();
+  // ------------------------ Initialise an ND-Tree for each node
   std::array<NDTree<std::pair<IntType, float>, 2>, NUM_NODES> node_states;
 
-  //                          name, time, load, num nodes, cost
-  State initial_state = State(0, 0, 0.0, n, 0.0);
-
-  std::deque<State> q;
-  q.push_back(initial_state);
-
   std::vector<std::string> names = graph.get_node_names();
-  for (int i = 0; i < names.size(); i++) {
+  for (size_t i = 0; i < names.size(); i++) {
     node_states[i] = NDTree<std::pair<IntType, float>, 2>({
       std::make_pair(0, 1500),    // time
       std::make_pair(0, 200),     // load
     });
   }
 
-  // Add the initial state
+  // ========================= Initialise variables for the bfs
+  int n = graph.get_num_nodes();
+  State initial_state = State(0, 0, 0.0, n, 0.0);
+  std::queue<State> q;
+  q.push(initial_state);
+
+  // ========================== Push the initial state
   node_states[0].add(
     {(double)initial_state.time, initial_state.load},
     {initial_state.nodes_seen.m_elems[0], initial_state.cost}
   );
 
   double ans = 0.0;
-
   int iterations = 0;
+
+  // ========================== Run the BFS
   while (q.size()) {
     State curr_state = q.front();
-    q.pop_front();
-    // std::cout << curr_state.to_string() << std::endl;
+    q.pop();
     iterations++;
     if (iterations % 10000 == 0)
       std::cout << iterations << " iterations" << std::endl;
@@ -188,13 +187,15 @@ template <typename IntType> void shortest_paths() {
       ans = std::min(ans, curr_state.cost);
 
     int from = curr_state.node;
+
+    // ========================== Iterate over every destination
     for (int to = 0; to < n; to++) {
       if (from == to)
         continue;
 
       Node to_node = graph.get_node_data(to);
 
-      // Cannot visit a node it's already been to
+      // ========================== Exit early if the new state would not be valid
       if (curr_state.has_been_to(to_node.index))
         continue;
 
@@ -225,15 +226,13 @@ template <typename IntType> void shortest_paths() {
       );
       bool add_state = true;
 
-      std::string to_name = names[to];
-
-      std::vector<std::pair<IntType, float>> possible_better_states;
-      possible_better_states.reserve(100);
+      // ========================== Query the ND Tree for possibly dominating states
       std::vector<int> ans_inds;
       node_states[to].query_prefix_dfs({(double)new_state.time, new_state.load}, ans_inds);
 
-      for (int i : ans_inds) {
-        for (const auto &check_state : node_states[to].m_value_map[i].second) {
+      for (int leaf_id : ans_inds) {
+        for (const auto &check_state : node_states[to].m_value_map[leaf_id].second) {
+          // ========================== If this previous state dominates, exit early
           if ((check_state.first & new_state.nodes_seen.m_elems[0]) == check_state.first && check_state.second <= new_state.cost) {
             add_state = false;
             break;
@@ -242,12 +241,12 @@ template <typename IntType> void shortest_paths() {
       }
 
       if (add_state) {
-        // Add the new state
+        // ========================== If this state has not been dominated, add it
         node_states[to].add(
           {(double)new_state.time, new_state.load},
           {new_state.nodes_seen.m_elems[0], new_state.cost}
         );
-        q.push_back(new_state);
+        q.push(new_state);
       }
     }
   }
@@ -256,32 +255,16 @@ template <typename IntType> void shortest_paths() {
 }
 
 int main(int argc, char **argv) {
-  // NDTree<int, 1> tree({std::make_pair(0, 10)});
-
-  // tree.add({1}, 1);
-  // tree.add({4}, 2);
-  // tree.add({9}, 9);
-
-  // std::cout << "Answer: ";
-  // for (auto d : tree.query_prefix_dfs({6})) {
-  //   std::cout << d << " ";
-  // }
-  // std::cout << std::endl;
-  // return 0;
   if (argc < 3) {
     std::cout << "Run with filename and number of iterations" << std::endl;
     return 1;
   }
 
-  // std::cout << "What file do you want to open? (e.g. c101_75)" << std::endl;
   std::string file_name;
   file_name = std::string(argv[1]);
-  // std::cin >> file_name;
 
-  // std::cout << "How many iterations? (e.g. 20)" << std::endl;
   std::string iterations_string = std::string(argv[2]);
   int iterations = std::stoi(iterations_string);
-  // std::cin >> iterations;
 
   // Don't print with scientific notation
   std::cout << std::fixed;
