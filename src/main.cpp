@@ -150,40 +150,24 @@ void populate_graph(std::string data_file, int iteration) {
 
 template <typename IntType> void shortest_paths() {
   // ------------------------ Initialise an ND-Tree for each node
-  std::array<NDTree<int, 3>, NUM_NODES> node_states;
-
-  std::vector<State<IntType>> all_states;
-  std::vector<std::string> names = graph.get_node_names();
-  for (size_t i = 0; i < names.size(); i++) {
-    node_states[i] = NDTree<int, 3>(
-      {std::make_pair(0, 201),    // load,
-       std::make_pair(-1e4, 1e4)}
-    );
-  }
-
-  // ========================= Initialise variables for the bfs
   int n = graph.get_num_nodes();
   State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
-  all_states.push_back(initial_state);
   std::queue<State<IntType>> q;
-  int q_pointer = 0;
-
+  q.push(initial_state);
+  std::vector<std::vector<State<IntType>>> prev_states(n);
   // ========================== Push the initial state
-  node_states[0].add({(float)initial_state.load, (float)initial_state.cost}, 0);
 
   double ans = 0.0;
   int iterations = 0;
-  int skipped = 0;
 
   // ========================== Run the BFS
-  while (q_pointer < all_states.size()) {
-    State<IntType> curr_state = all_states[q_pointer];
-    q_pointer++;
+  while (q.size()) {
+    State<IntType> curr_state = q.front();
+    q.pop();
 
     iterations++;
     if (iterations % 10000 == 0)
-      std::cout << iterations << " iterations, " << skipped << "skipped, currently at time "
-                << curr_state.time << std::endl;
+      std::cout << iterations << " iterations, currently at time " << curr_state.time << std::endl;
 
     if (curr_state.node == 0)
       ans = std::min(ans, curr_state.cost);
@@ -229,14 +213,8 @@ template <typename IntType> void shortest_paths() {
 
       bool add_state = true;
 
-      // ========================== Query the ND Tree for possibly dominating states
-      std::vector<int> ans_inds;
-      node_states[to].query_prefix_dfs({(float)new_state.load, (float)new_state.cost}, ans_inds);
-
-      for (int node_id : ans_inds) {
-        const auto &check_state = all_states[node_id];
-        // ========================== If this previous state dominates, exit early
-        if ((check_state.nodes_seen & new_state.nodes_seen) == check_state.nodes_seen && check_state.time <= new_state.time) {
+      for (State s : prev_states[to]) {
+        if ( (s.nodes_seen & new_seen) == s.nodes_seen && s.time <= new_state.time && s.cost <= new_state.cost && s.load <= new_state.load) {
           add_state = false;
           break;
         }
@@ -244,8 +222,8 @@ template <typename IntType> void shortest_paths() {
 
       if (add_state) {
         // ========================== If this state has not been dominated, add it
-        all_states.push_back(new_state);
-        node_states[to].add({(float)new_state.load, (float)new_state.cost}, all_states.size() - 1);
+        q.push(new_state);
+        prev_states[to].push_back(new_state);
       }
     }
   }
