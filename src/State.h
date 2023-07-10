@@ -8,7 +8,7 @@ struct State {
   State(const State &other) = default;
 
   bool has_been_to(size_t node) const;
-  bool operator<(const State other) const;
+  bool operator<(const State other) const { return time >= other.time; };
   bool operator>(const State other) const;
   bool operator==(const State other) const;
   bool dominates(const State other) const;
