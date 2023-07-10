@@ -149,11 +149,12 @@ void populate_graph(std::string data_file, int iteration) {
 
 template <typename IntType> void shortest_paths() {
   // ------------------------ Initialise an ND-Tree for each node
-  std::array<NDTree<std::pair<IntType, float>, 2>, NUM_NODES> node_states;
+  std::array<NDTree<int, 2>, NUM_NODES> node_states;
 
+  std::vector<State<IntType>> all_states;
   std::vector<std::string> names = graph.get_node_names();
   for (size_t i = 0; i < names.size(); i++) {
-    node_states[i] = NDTree<std::pair<IntType, float>, 2>(
+    node_states[i] = NDTree<int, 2>(
       {std::make_pair(0, 201),    // load,
        std::make_pair(0, 15001)}
     );
@@ -162,26 +163,20 @@ template <typename IntType> void shortest_paths() {
   // ========================= Initialise variables for the bfs
   int n = graph.get_num_nodes();
   State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
+  all_states.push_back(initial_state);
   std::queue<State<IntType>> q;
-  q.push(initial_state);
+  int q_pointer = 0;
 
   // ========================== Push the initial state
-  node_states[0].add(
-    {initial_state.load, (double)initial_state.time}, {initial_state.nodes_seen, initial_state.cost}
-  );
+  node_states[0].add({initial_state.load, (double)initial_state.time}, 0);
 
   double ans = 0.0;
   int iterations = 0;
   int skipped = 0;
   // ========================== Run the BFS
-  while (q.size()) {
-    State curr_state = q.front();
-    q.pop();
-
-    std::vector<int> possible_better_inds;
-    node_states[curr_state.node].query_prefix_dfs(
-      {curr_state.load, (double)curr_state.time}, possible_better_inds
-    );
+  while (q_pointer < all_states.size()) {
+    State<IntType> curr_state = all_states[q_pointer];
+    q_pointer++;
 
     iterations++;
     if (iterations % 10000 == 0)
@@ -236,9 +231,10 @@ template <typename IntType> void shortest_paths() {
       node_states[to].query_prefix_dfs({new_state.load, (double)new_state.time}, ans_inds);
 
       for (int leaf_id : ans_inds) {
-        for (const auto &check_state : node_states[to].m_value_map[leaf_id].second) {
+        for (int node_id : node_states[to].m_value_map[leaf_id].second) {
+          const auto check_state = all_states[node_id];
           // ========================== If this previous state dominates, exit early
-          if ((check_state.first & new_state.nodes_seen) == check_state.first && check_state.second <= new_state.cost) {
+          if ((check_state.nodes_seen & new_state.nodes_seen) == check_state.nodes_seen && check_state.cost <= new_state.cost) {
             add_state = false;
             break;
           }
@@ -247,10 +243,8 @@ template <typename IntType> void shortest_paths() {
 
       if (add_state) {
         // ========================== If this state has not been dominated, add it
-        node_states[to].add(
-          {new_state.load, (double)new_state.time}, {new_state.nodes_seen, new_state.cost}
-        );
-        q.push(new_state);
+        all_states.push_back(new_state);
+        node_states[to].add({new_state.load, (double)new_state.time}, all_states.size() - 1);
       }
     }
   }
