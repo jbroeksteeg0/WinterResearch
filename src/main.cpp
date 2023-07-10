@@ -149,55 +149,45 @@ void populate_graph(std::string data_file, int iteration) {
 
 template <typename IntType> void shortest_paths() {
   // ------------------------ Initialise an ND-Tree for each node
-  std::array<NDTree<std::pair<IntType, float>, 1>, NUM_NODES> node_states;
+  std::array<NDTree<std::pair<IntType, float>, 2>, NUM_NODES> node_states;
 
   std::vector<std::string> names = graph.get_node_names();
   for (size_t i = 0; i < names.size(); i++) {
-    node_states[i] = NDTree<std::pair<IntType, float>, 1>({
-      std::make_pair(0, 201),    // load
-    });
+    node_states[i] = NDTree<std::pair<IntType, float>, 2>(
+      {std::make_pair(0, 201),    // load,
+       std::make_pair(0, 15001)}
+    );
   }
 
   // ========================= Initialise variables for the bfs
   int n = graph.get_num_nodes();
   State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
-  std::priority_queue<State<IntType>> q;
+  std::queue<State<IntType>> q;
   q.push(initial_state);
 
   // ========================== Push the initial state
-  node_states[0].add({initial_state.load}, {initial_state.nodes_seen, initial_state.cost});
+  node_states[0].add(
+    {initial_state.load, (double)initial_state.time}, {initial_state.nodes_seen, initial_state.cost}
+  );
 
   double ans = 0.0;
   int iterations = 0;
   int skipped = 0;
   // ========================== Run the BFS
   while (q.size()) {
-    State curr_state = q.top();
+    State curr_state = q.front();
     q.pop();
 
     std::vector<int> possible_better_inds;
-    node_states[curr_state.node].query_prefix_dfs({curr_state.load}, possible_better_inds);
-
-    bool skip = false;
-    for (int leaf_id : possible_better_inds) {
-      for (const auto &check_state : node_states[curr_state.node].m_value_map[leaf_id].second) {
-        // ========================== If this previous state dominates, exit early
-        if ((check_state.first & curr_state.nodes_seen) == check_state.first &&
-        check_state.second < curr_state.cost) {
-          skip = true;
-          skipped++;
-          break;
-        }
-      }
-    }
+    node_states[curr_state.node].query_prefix_dfs(
+      {curr_state.load, (double)curr_state.time}, possible_better_inds
+    );
 
     iterations++;
     if (iterations % 10000 == 0)
       std::cout << iterations << " iterations, " << skipped << "skipped, currently at time "
                 << curr_state.time << std::endl;
 
-    if (skip)
-      continue;
     if (curr_state.node == 0)
       ans = std::min(ans, curr_state.cost);
 
@@ -243,7 +233,7 @@ template <typename IntType> void shortest_paths() {
 
       // ========================== Query the ND Tree for possibly dominating states
       std::vector<int> ans_inds;
-      node_states[to].query_prefix_dfs({new_state.load}, ans_inds);
+      node_states[to].query_prefix_dfs({new_state.load, (double)new_state.time}, ans_inds);
 
       for (int leaf_id : ans_inds) {
         for (const auto &check_state : node_states[to].m_value_map[leaf_id].second) {
@@ -257,7 +247,9 @@ template <typename IntType> void shortest_paths() {
 
       if (add_state) {
         // ========================== If this state has not been dominated, add it
-        node_states[to].add({new_state.load}, {new_state.nodes_seen, new_state.cost});
+        node_states[to].add(
+          {new_state.load, (double)new_state.time}, {new_state.nodes_seen, new_state.cost}
+        );
         q.push(new_state);
       }
     }
