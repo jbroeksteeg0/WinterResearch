@@ -166,7 +166,7 @@ template <typename IntType> void shortest_paths() {
   q.push(initial_state);
 
   // ========================== Push the initial state
-  node_states[0].add({initial_state.load}, {initial_state.nodes_seen.m_elems, initial_state.cost});
+  node_states[0].add({initial_state.load}, {initial_state.nodes_seen, initial_state.cost});
 
   double ans = 0.0;
   int iterations = 0;
@@ -210,8 +210,8 @@ template <typename IntType> void shortest_paths() {
       if (new_time > to_node.open_times.second)
         continue;
 
-      DynamicBitset new_seen = curr_state.nodes_seen;
-      new_seen.set(to_node.index, true);
+      __int128 new_seen = curr_state.nodes_seen;
+      new_seen |= (((__int128)1) << to_node.index);
 
       State new_state = State(
         to,                                           // position
@@ -229,7 +229,7 @@ template <typename IntType> void shortest_paths() {
       for (int leaf_id : ans_inds) {
         for (const auto &check_state : node_states[to].m_value_map[leaf_id].second) {
           // ========================== If this previous state dominates, exit early
-          if ((check_state.first & new_state.nodes_seen.m_elems) == check_state.first && check_state.second <= new_state.cost) {
+          if ((check_state.first & new_state.nodes_seen) == check_state.first && check_state.second <= new_state.cost) {
             add_state = false;
             break;
           }
@@ -238,7 +238,7 @@ template <typename IntType> void shortest_paths() {
 
       if (add_state) {
         // ========================== If this state has not been dominated, add it
-        node_states[to].add({new_state.load}, {new_state.nodes_seen.m_elems, new_state.cost});
+        node_states[to].add({new_state.load}, {new_state.nodes_seen, new_state.cost});
         q.push(new_state);
       }
     }

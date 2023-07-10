@@ -4,7 +4,7 @@
 
 struct State {
   State();
-  State(int node, int time, double load, DynamicBitset seen, double cost);
+  State(int node, int time, double load, __int128 seen, double cost);
   State(const State &other) = default;
 
   bool has_been_to(size_t node) const;
@@ -20,5 +20,5 @@ struct State {
   int64_t hash;
   double load;
   double cost;
-  DynamicBitset nodes_seen;
+  __int128 nodes_seen;
 };
