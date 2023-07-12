@@ -162,7 +162,7 @@ template <typename IntType> void shortest_paths() {
 
   // ========================== Run the BFS
   while (q.size()) {
-    State<IntType> curr_state = q.front();
+    State<IntType> curr_state = q.top();
     q.pop();
 
     iterations++;
