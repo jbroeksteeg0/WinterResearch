@@ -152,8 +152,9 @@ template <typename IntType> void shortest_paths() {
   // ------------------------ Initialise an ND-Tree for each node
   int n = graph.get_num_nodes();
   State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
-  std::queue<State<IntType>> q;
-  q.push(initial_state);
+  std::vector<State<IntType>> q;
+  int q_pointer = 0;
+  q.push_back(initial_state);
   std::vector<std::vector<State<IntType>>> prev_states(n);
   // ========================== Push the initial state
 
@@ -161,9 +162,8 @@ template <typename IntType> void shortest_paths() {
   int iterations = 0;
 
   // ========================== Run the BFS
-  while (q.size()) {
-    State<IntType> curr_state = q.front();
-    q.pop();
+  while (q_pointer < q.size()) {
+    State<IntType> curr_state = q[q_pointer++];
 
     iterations++;
     if (iterations % 10000 == 0)
@@ -223,7 +223,7 @@ template <typename IntType> void shortest_paths() {
 
       if (add_state) {
         // ========================== If this state has not been dominated, add it
-        q.push(new_state);
+        q.push_back(new_state);
         prev_states[to].push_back(new_state);
       }
     }
