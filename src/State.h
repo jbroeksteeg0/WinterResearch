@@ -13,7 +13,10 @@ template <typename IntType> struct State {
 
   bool has_been_to(size_t node) const { return nodes_seen & (((IntType)1) << node); }
   bool operator<(const State other) const { return cost >= cost; };
-  bool operator>(const State other) const;
+  bool operator>(const State other) const {
+    return std::tie(time, node, load, cost, nodes_seen)
+           > std::tie(other.time, other.node, other.load, other.cost, other.nodes_seen);
+  };
   bool operator==(const State<IntType> &other) const = default;
   bool dominates(const State other) const;
 
