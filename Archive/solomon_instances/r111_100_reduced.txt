@@ -1,5 +1,5 @@
 InstanceName: Solomon-R111-100
-Q: 80
+Q: 90
 
          R         X         Y         Q         A         B         S
        R-D        35        35         0         0       230         0
