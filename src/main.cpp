@@ -149,7 +149,7 @@ void populate_graph(std::string data_file, int iteration) {
 template <typename IntType> void shortest_paths() {
   // ------------------------ Initialise an ND-Tree for each node
   int n = graph.get_num_nodes();
-  State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
+  State<IntType> initial_state = State(0, 0, 0.0, (IntType)0, 0.0);
   std::priority_queue<State<IntType>, std::vector<State<IntType>>, std::greater<State<IntType>>> q;
   q.push(initial_state);
   std::vector<std::vector<State<IntType>>> prev_states(n);
