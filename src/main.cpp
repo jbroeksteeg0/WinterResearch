@@ -28,7 +28,6 @@
 
 */
 int vehicle_capacity;
-Graph graph;
 int num_nodes;
 
 std::array<Node, 101> nodes;
@@ -79,11 +78,11 @@ void populate_graph(std::string data_file, int iteration) {
   std::getline(file, curr_line);
   std::getline(file, curr_line);
 
-  std::vector<std::string> location_names;
-  std::map<std::string, std::pair<int, int>> node_location, node_times;
-  std::map<std::string, int> node_unload_time, node_load, node_index;
-  std::map<std::string, float> node_bias;
-  std::map<int, std::string> node_name;
+  // std::vector<std::string> location_names;
+  // std::map<std::string, std::pair<int, int>> node_location, node_times;
+  // std::map<std::string, int> node_unload_time, node_load, node_index;
+  // std::map<std::string, float> node_bias;
+  // std::map<int, std::string> node_name;
 
   int ind = 0;
   while (std::getline(file, curr_line)) {
@@ -158,7 +157,7 @@ double inline get_cost(int a, int b) { return dist[a][b] - nodes[b].bias; }
 template <typename IntType> void shortest_paths() {
   // ------------------------ Initialise an ND-Tree for each node
   int n = num_nodes;
-  State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
+  State<IntType> initial_state = State(0, 0, 0.0, (IntType)0, 0.0);
   std::vector<State<IntType>> q;
   int q_pointer = 0;
   q.push_back(initial_state);
@@ -168,6 +167,9 @@ template <typename IntType> void shortest_paths() {
   double ans = 0.0;
   int iterations = 0;
 
+  for (int i = 0; i < n; i++) {
+    std::cout << nodes[i].to_string() << std::endl;
+  }
   // ========================== Run the BFS
   while (q_pointer < q.size()) {
     State<IntType> curr_state = q[q_pointer++];

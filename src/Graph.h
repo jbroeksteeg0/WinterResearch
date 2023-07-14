@@ -25,6 +25,11 @@ struct Node {
     double bias,
     int index
   );
+  std::string to_string() const {
+    return "Node (" + std::to_string(x) + "," + std::to_string(y) + "), " + std::to_string(index)
+           + ": " + std::to_string(load) + " load, " + std::to_string(bias) + " bias, unload time "
+           + std::to_string(unload_time);
+  }
 };
 
 class Graph {
