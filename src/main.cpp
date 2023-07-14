@@ -146,7 +146,7 @@ void populate_graph(std::string data_file, int iteration) {
         double node_dist = std::sqrt(dx * dx + dy * dy);
 
         // graph.add_edge(i, j, ceil(dist));
-        dist[i][j] = node_dist;
+        dist[i][j] = ceil(node_dist);
       }
     }
   }
@@ -213,7 +213,7 @@ template <typename IntType> void shortest_paths() {
 
       State new_state = State(
         to,                                     // position
-        new_time + nodes[to].unload_time,       // time
+        new_time + to_node.unload_time,         // time
         curr_state.load + to_node.load,         // load
         new_seen,                               // nodes seen
         curr_state.cost + get_cost(from, to)    // cost
