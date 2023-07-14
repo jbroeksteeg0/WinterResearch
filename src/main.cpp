@@ -183,8 +183,7 @@ template <typename IntType> void shortest_paths() {
       if (curr_state.has_been_to(to_node.index))
         continue;
 
-      int new_time =
-        curr_state.time + graph.get_node_unpack_time(from) + graph.get_distance(from, to);
+      int new_time = curr_state.time + graph.get_distance(from, to);
 
       if (new_time < to_node.open_times.first) {
         new_time = to_node.open_times.first;
@@ -203,7 +202,7 @@ template <typename IntType> void shortest_paths() {
 
       State new_state = State(
         to,                                           // position
-        new_time,                                     // time
+        new_time + graph.get_node_unpack_time(to),    // time
         curr_state.load + to_node.load,               // load
         new_seen,                                     // nodes seen
         curr_state.cost + graph.get_cost(from, to)    // cost
