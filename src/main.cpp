@@ -234,7 +234,8 @@ template <typename IntType> void shortest_paths() {
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cout << "Run with filename and number of iterations" << std::endl;
+    std::cout << "Run with filename and number of iterations, e.g. './main c101_25 56'"
+              << std::endl;
     return 1;
   }
 
