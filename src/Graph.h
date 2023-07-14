@@ -54,8 +54,8 @@ public:
   Node get_node_data(int name) const;
 
   std::array<Node, NUM_NODES + 1> m_nodes_;
+  std::array<std::array<int, NUM_NODES + 1>, NUM_NODES + 1> m_dist_;
 
 private:
-  std::array<std::array<int, NUM_NODES + 1>, NUM_NODES + 1> m_dist_;
   std::vector<std::string> m_node_names;
 };

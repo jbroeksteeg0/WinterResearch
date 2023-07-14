@@ -31,6 +31,9 @@ int vehicle_capacity;
 Graph graph;
 int num_nodes;
 
+std::array<Node, 101> nodes;
+std::array<std::array<int, 101>, 101> dist;
+
 void populate_graph(std::string data_file, int iteration) {
   std::string data_filename = "Archive/solomon_instances/" + data_file + ".txt";
 
@@ -93,15 +96,19 @@ void populate_graph(std::string data_file, int iteration) {
     ss = std::stringstream(curr_line);
     ss >> dest_name >> x >> y >> load >> time_start >> time_end >> time_unload;
 
-    node_location[dest_name] = {x, y};
-    node_times[dest_name] = {time_start, time_end};
-    node_unload_time[dest_name] = time_unload;
-    node_load[dest_name] = load;
-    node_index[dest_name] = ind;
-    node_name[ind++] = dest_name;
+    // node_location[dest_name] = {x, y};
+    // node_times[dest_name] = {time_start, time_end};
+    // node_unload_time[dest_name] = time_unload;
+    // node_load[dest_name] = load;
+    // node_index[dest_name] = ind;
+    // node_name[ind++] = dest_name;
 
-    location_names.push_back(dest_name);
+    nodes[ind] = Node(x, y, {time_start, time_end}, time_unload, load, 0, ind);
+    ind++;
+
+    // location_names.push_back(dest_name);
   }
+  num_nodes = ind;
 
   // Parse the biases
   if (!std::filesystem::exists(biases_filename)) {
@@ -110,45 +117,47 @@ void populate_graph(std::string data_file, int iteration) {
   }
   std::ifstream bias_file = std::ifstream(biases_filename);
 
-  for (size_t i = 1; i < location_names.size(); i++) {
+  for (size_t i = 1; i < num_nodes; i++) {
     float bias;
     bias_file >> bias;
 
-    node_bias[node_name[i]] = bias;
+    // node_bias[node_name[i]] = bias;
+    nodes[i].bias = bias;
   }
 
   // Add in all the nodes
-  for (const auto &node_name : location_names) {
-    graph.add_node(
-      node_name,
-      node_location[node_name],
-      node_times[node_name],
-      node_unload_time[node_name],
-      node_load[node_name],
-      node_bias[node_name],
-      node_index[node_name]
-    );
-  }
+  // for (const auto &node_name : location_names) {
+  //   graph.add_node(
+  //     node_name,
+  //     node_location[node_name],
+  //     node_times[node_name],
+  //     node_unload_time[node_name],
+  //     node_load[node_name],
+  //     node_bias[node_name],
+  //     node_index[node_name]
+  //   );
+  // }
 
-  for (size_t i = 0; i < location_names.size(); i++) {
-    for (size_t j = 0; j < location_names.size(); j++) {
+  for (size_t i = 0; i < num_nodes; i++) {
+    for (size_t j = 0; j < num_nodes; j++) {
       if (i != j) {
-        double dx = node_location[location_names[i]].first - node_location[location_names[j]].first;
-        double dy =
-          node_location[location_names[i]].second - node_location[location_names[j]].second;
+        double dx = nodes[i].x - nodes[j].x;
+        double dy = nodes[i].y - nodes[j].y;
 
-        double dist = std::sqrt(dx * dx + dy * dy);
+        double node_dist = std::sqrt(dx * dx + dy * dy);
 
-        graph.add_edge(i, j, ceil(dist));
+        // graph.add_edge(i, j, ceil(dist));
+        dist[i][j] = node_dist;
       }
     }
   }
-  num_nodes = graph.get_num_nodes();
 }
+
+double inline get_cost(int a, int b) { return dist[a][b] - nodes[b].bias; }
 
 template <typename IntType> void shortest_paths() {
   // ------------------------ Initialise an ND-Tree for each node
-  int n = graph.get_num_nodes();
+  int n = num_nodes;
   State<IntType> initial_state = State(0, 0, 0.0, (IntType)n, 0.0);
   std::vector<State<IntType>> q;
   int q_pointer = 0;
@@ -177,14 +186,13 @@ template <typename IntType> void shortest_paths() {
       if (from == to)
         continue;
 
-      Node to_node = graph.get_node_data(to);
+      Node &to_node = nodes[to];
 
       // ========================== Exit early if the new state would not be valid
       if (curr_state.has_been_to(to_node.index))
         continue;
 
-      int new_time =
-        curr_state.time + graph.get_node_unpack_time(from) + graph.get_distance(from, to);
+      int new_time = curr_state.time + dist[from][to];
 
       if (new_time < to_node.open_times.first) {
         new_time = to_node.open_times.first;
@@ -202,11 +210,11 @@ template <typename IntType> void shortest_paths() {
       new_seen |= (((IntType)1) << to_node.index);
 
       State new_state = State(
-        to,                                           // position
-        new_time,                                     // time
-        curr_state.load + to_node.load,               // load
-        new_seen,                                     // nodes seen
-        curr_state.cost + graph.get_cost(from, to)    // cost
+        to,                                     // position
+        new_time + nodes[to].unload_time,       // time
+        curr_state.load + to_node.load,         // load
+        new_seen,                               // nodes seen
+        curr_state.cost + get_cost(from, to)    // cost
       );
 
       bool add_state = true;
