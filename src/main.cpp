@@ -220,7 +220,7 @@ template <typename IntType> void shortest_paths() {
 
       // std::cout << prev_states[to].size() << std::endl;
       for (State s : prev_states[to]) {
-        if ( (s.nodes_seen & new_seen) == s.nodes_seen && s.time <= new_state.time && s.cost <= new_state.cost && s.load <= new_state.load) {
+        if ( (s.nodes_seen & new_seen) == s.nodes_seen && s.cost <= new_state.cost && s.load <= new_state.load) {
           add_state = false;
           break;
         }
