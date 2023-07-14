@@ -25,6 +25,11 @@ struct Node {
     double bias,
     int index
   );
+  std::string to_string() const {
+    return "Node (" + std::to_string(x) + "," + std::to_string(y) + "), " + std::to_string(index)
+           + ": " + std::to_string(load) + " load, " + std::to_string(bias) + " bias, unload time "
+           + std::to_string(unload_time);
+  }
 };
 
 class Graph {
@@ -54,8 +59,8 @@ public:
   Node get_node_data(int name) const;
 
   std::array<Node, NUM_NODES + 1> m_nodes_;
+  std::array<std::array<int, NUM_NODES + 1>, NUM_NODES + 1> m_dist_;
 
 private:
-  std::array<std::array<int, NUM_NODES + 1>, NUM_NODES + 1> m_dist_;
   std::vector<std::string> m_node_names;
 };
