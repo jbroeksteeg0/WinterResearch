@@ -167,9 +167,6 @@ template <typename IntType> void shortest_paths() {
   double ans = 0.0;
   int iterations = 0;
 
-  for (int i = 0; i < n; i++) {
-    std::cout << nodes[i].to_string() << std::endl;
-  }
   // ========================== Run the BFS
   while (q_pointer < q.size()) {
     State<IntType> curr_state = q[q_pointer++];
