@@ -8,8 +8,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <limits.h>
 #include <map>
+#include <numeric>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -31,7 +31,7 @@ int vehicle_capacity;
 int num_nodes;
 
 std::array<Node, 101> nodes;
-std::array<std::array<int, 101>, 101> dist;
+std::array<std::array<int, 101>, 101> dist, cost;
 
 void populate_graph(std::string data_file, int iteration) {
   std::string data_filename = "Archive/solomon_instances/" + data_file + ".txt";
@@ -78,12 +78,6 @@ void populate_graph(std::string data_file, int iteration) {
   std::getline(file, curr_line);
   std::getline(file, curr_line);
 
-  // std::vector<std::string> location_names;
-  // std::map<std::string, std::pair<int, int>> node_location, node_times;
-  // std::map<std::string, int> node_unload_time, node_load, node_index;
-  // std::map<std::string, float> node_bias;
-  // std::map<int, std::string> node_name;
-
   int ind = 0;
   while (std::getline(file, curr_line)) {
     std::string dest_name;
@@ -95,17 +89,8 @@ void populate_graph(std::string data_file, int iteration) {
     ss = std::stringstream(curr_line);
     ss >> dest_name >> x >> y >> load >> time_start >> time_end >> time_unload;
 
-    // node_location[dest_name] = {x, y};
-    // node_times[dest_name] = {time_start, time_end};
-    // node_unload_time[dest_name] = time_unload;
-    // node_load[dest_name] = load;
-    // node_index[dest_name] = ind;
-    // node_name[ind++] = dest_name;
-
     nodes[ind] = Node(x, y, {time_start, time_end}, time_unload, load, 0, ind);
     ind++;
-
-    // location_names.push_back(dest_name);
   }
   num_nodes = ind;
 
@@ -117,51 +102,35 @@ void populate_graph(std::string data_file, int iteration) {
   std::ifstream bias_file = std::ifstream(biases_filename);
 
   for (size_t i = 1; i < num_nodes; i++) {
-    float bias;
+    double bias;
     bias_file >> bias;
 
-    // node_bias[node_name[i]] = bias;
     nodes[i].bias = bias;
   }
-
-  // Add in all the nodes
-  // for (const auto &node_name : location_names) {
-  //   graph.add_node(
-  //     node_name,
-  //     node_location[node_name],
-  //     node_times[node_name],
-  //     node_unload_time[node_name],
-  //     node_load[node_name],
-  //     node_bias[node_name],
-  //     node_index[node_name]
-  //   );
-  // }
 
   for (size_t i = 0; i < num_nodes; i++) {
     for (size_t j = 0; j < num_nodes; j++) {
       if (i != j) {
-        double dx = nodes[i].x - nodes[j].x;
-        double dy = nodes[i].y - nodes[j].y;
+        const double dx = nodes[i].x - nodes[j].x;
+        const double dy = nodes[i].y - nodes[j].y;
 
-        double node_dist = std::sqrt(dx * dx + dy * dy);
+        const double node_dist = std::sqrt(dx * dx + dy * dy);
 
-        // graph.add_edge(i, j, ceil(dist));
         dist[i][j] = ceil(node_dist);
+        cost[i][j] = dist[i][j] - nodes[j].bias;
       }
     }
   }
 }
 
-double inline get_cost(int a, int b) { return dist[a][b] - nodes[b].bias; }
-
 template <typename IntType> void shortest_paths() {
-  // ------------------------ Initialise an ND-Tree for each node
   int n = num_nodes;
-  State<IntType> initial_state = State(0, 0, 0.0, (IntType)0, 0.0);
+  State<IntType> initial_state(0, 0, 0.0, (IntType)0, 0.0, 0);
   std::vector<State<IntType>> q;
   int q_pointer = 0;
   q.push_back(initial_state);
   std::vector<std::vector<State<IntType>>> prev_states(n);
+  prev_states[0].push_back(initial_state);
   // ========================== Push the initial state
 
   double ans = 0.0;
@@ -169,7 +138,8 @@ template <typename IntType> void shortest_paths() {
 
   // ========================== Run the BFS
   while (q_pointer < q.size()) {
-    State<IntType> curr_state = q[q_pointer++];
+    const State<IntType> &curr_state = prev_states[q[q_pointer].node][q[q_pointer].index_in_prev];
+    q_pointer++;
 
     iterations++;
     if (iterations % 10000 == 0)
@@ -188,49 +158,33 @@ template <typename IntType> void shortest_paths() {
       Node &to_node = nodes[to];
 
       // ========================== Exit early if the new state would not be valid
-      if (curr_state.has_been_to(to_node.index))
-        continue;
 
-      int new_time = curr_state.time + dist[from][to];
-
-      if (new_time < to_node.open_times.first) {
-        new_time = to_node.open_times.first;
-      }
-
-      // Cannot visit a node if it has too much load
-      if (curr_state.load + to_node.load > vehicle_capacity)
-        continue;
-
-      // Cannot visit a node if it doesn't arrive in time
-      if (new_time > to_node.open_times.second)
+      int new_time = std::max(to_node.open_times.first, curr_state.time + dist[from][to]);
+      if (curr_state.has_been_to(to) || new_time > to_node.open_times.second || curr_state.load + to_node.load > vehicle_capacity)
         continue;
 
       IntType new_seen = curr_state.nodes_seen;
       new_seen |= (((IntType)1) << to_node.index);
 
       State new_state = State(
-        to,                                     // position
-        new_time + to_node.unload_time,         // time
-        curr_state.load + to_node.load,         // load
-        new_seen,                               // nodes seen
-        curr_state.cost + get_cost(from, to)    // cost
+        to,                                  // position
+        new_time + to_node.unload_time,      // time
+        curr_state.load + to_node.load,      // load
+        new_seen,                            // nodes seen
+        curr_state.cost + cost[from][to],    // cost
+        prev_states[to].size()
       );
 
-      bool add_state = true;
-
-      // std::cout << prev_states[to].size() << std::endl;
-      for (State s : prev_states[to]) {
-        if ( (s.nodes_seen & new_seen) == s.nodes_seen && s.time <= new_state.time && s.cost <= new_state.cost && s.load <= new_state.load) {
-          add_state = false;
-          break;
+      for (const State<IntType> &s : prev_states[to]) {
+        if ( (s.nodes_seen & new_seen) == s.nodes_seen && s.time < new_state.time && s.cost < new_state.cost && s.load < new_state.load) {
+          goto LOOPEND;
         }
       }
 
-      if (add_state) {
-        // ========================== If this state has not been dominated, add it
-        q.push_back(new_state);
-        prev_states[to].push_back(new_state);
-      }
+      // ========================== If this state has not been dominated, add it
+      q.push_back(new_state);
+      prev_states[to].push_back(new_state);
+    LOOPEND:;
     }
   }
 

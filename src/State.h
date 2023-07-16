@@ -3,11 +3,13 @@
 
 template <typename IntType> struct State {
   State() {}
-  State(int node, int time, double load, IntType seen, double cost) : nodes_seen(seen) {
+  State(int node, int time, double load, IntType seen, double cost, int index_in_prev)
+      : nodes_seen(seen) {
     this->node = node;
     this->time = time;
     this->load = load;
     this->cost = cost;
+    this->index_in_prev = index_in_prev;
   }
   State(const State &other) = default;
 
@@ -27,8 +29,9 @@ template <typename IntType> struct State {
 
   int node;
   int time;
-  int64_t hash;
+  int64_t hash;    // TODO hash
   double load;
   double cost;
+  int index_in_prev;
   IntType nodes_seen;
 };
