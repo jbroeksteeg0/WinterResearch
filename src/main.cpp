@@ -31,7 +31,8 @@ int vehicle_capacity;
 int num_nodes;
 
 std::array<Node, 101> nodes;
-std::array<std::array<int, 101>, 101> dist, cost;
+std::array<std::array<int, 101>, 101> dist;
+std::array<std::array<double, 101>, 101> cost;
 
 void populate_graph(std::string data_file, int iteration) {
   std::string data_filename = "Archive/solomon_instances/" + data_file + ".txt";
