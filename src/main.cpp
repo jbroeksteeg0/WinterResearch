@@ -139,6 +139,7 @@ template <typename IntType> void shortest_paths() {
   // ========================== Run the BFS
   while (q_pointer < q.size()) {
     const State<IntType> &curr_state = prev_states[q[q_pointer].node][q[q_pointer].index_in_prev];
+    assert(curr_state == q[q_pointer]);
     q_pointer++;
 
     iterations++;
@@ -152,15 +153,12 @@ template <typename IntType> void shortest_paths() {
 
     // ========================== Iterate over every destination
     for (int to = 0; to < n; to++) {
-      if (from == to)
-        continue;
-
       Node &to_node = nodes[to];
 
       // ========================== Exit early if the new state would not be valid
 
       int new_time = std::max(to_node.open_times.first, curr_state.time + dist[from][to]);
-      if (curr_state.has_been_to(to) || new_time > to_node.open_times.second || curr_state.load + to_node.load > vehicle_capacity)
+      if (from == to || curr_state.has_been_to(to) || new_time > to_node.open_times.second || curr_state.load + to_node.load > vehicle_capacity)
         continue;
 
       IntType new_seen = curr_state.nodes_seen;
