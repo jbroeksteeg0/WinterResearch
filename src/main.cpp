@@ -81,7 +81,7 @@ void populate_graph(std::string data_file, int iteration) {
   // std::vector<std::string> location_names;
   // std::map<std::string, std::pair<int, int>> node_location, node_times;
   // std::map<std::string, int> node_unload_time, node_load, node_index;
-  // std::map<std::string, float> node_bias;
+  // std::map<std::string, double> node_bias;
   // std::map<int, std::string> node_name;
 
   int ind = 0;
@@ -117,7 +117,7 @@ void populate_graph(std::string data_file, int iteration) {
   std::ifstream bias_file = std::ifstream(biases_filename);
 
   for (size_t i = 1; i < num_nodes; i++) {
-    float bias;
+    double bias;
     bias_file >> bias;
 
     // node_bias[node_name[i]] = bias;
