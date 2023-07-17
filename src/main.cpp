@@ -129,9 +129,11 @@ template <typename IntType> void shortest_paths() {
 
   int n = num_nodes;
   State<IntType> initial_state(0, 0, 0.0, (IntType)0, 0.0, 0);
-  std::priority_queue<State<IntType>, std::vector<State<IntType>>, std::greater<State<IntType>>> q;
-  q.push(initial_state);
   std::vector<std::vector<State<IntType>>> prev_states(n);
+
+  using TI = std::tuple<int, int, int>;
+  std::priority_queue<TI, std::vector<TI>, std::greater<TI>> q;
+  q.push({0, 0, 0});    // {time, node, index}
   prev_states[0].push_back(initial_state);
   // ========================== Push the initial state
 
@@ -140,7 +142,8 @@ template <typename IntType> void shortest_paths() {
 
   // ========================== Run the BFS
   while (q.size()) {
-    State<IntType> curr_state = q.top();
+    const auto &t = q.top();
+    State<IntType> &curr_state = prev_states[std::get<1>(t)][std::get<2>(t)];
     q.pop();
 
     iterations++;
@@ -188,7 +191,7 @@ template <typename IntType> void shortest_paths() {
         );
 
         // ========================== If this state has not been dominated, add it
-        q.push(new_state);
+        q.push({new_state.time, new_state.node, prev_states[to].size()});
         prev_states[to].push_back(new_state);
       }
     LOOPEND:;
