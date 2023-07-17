@@ -3,20 +3,18 @@
 
 template <typename IntType> struct State {
   State() {}
-  State(int node, int time, double load, IntType seen, double cost) : nodes_seen(seen) {
+  State(int node, int time, double load, IntType seen, double cost, int index_in_prev)
+      : nodes_seen(seen) {
     this->node = node;
     this->time = time;
     this->load = load;
     this->cost = cost;
+    this->index_in_prev = index_in_prev;
   }
   State(const State &other) = default;
 
   bool has_been_to(size_t node) const { return nodes_seen & (((IntType)1) << node); }
-  bool operator<(const State other) const { return cost >= cost; };
-  bool operator>(const State other) const {
-    return std::tie(time, node, load, cost, nodes_seen)
-           > std::tie(other.time, other.node, other.load, other.cost, other.nodes_seen);
-  };
+  bool operator>(const State other) const { return time > other.time; };
   bool operator==(const State<IntType> &other) const = default;
   bool dominates(const State other) const;
 
@@ -27,8 +25,8 @@ template <typename IntType> struct State {
 
   int node;
   int time;
-  int64_t hash;
   double load;
   double cost;
+  int index_in_prev;
   IntType nodes_seen;
 };
