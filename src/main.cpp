@@ -171,7 +171,7 @@ template <typename IntType> void shortest_paths() {
 
       for (size_t i = 0; i < prev_states[to].size(); i++) {
         const State<IntType> &s = prev_states[to][i];
-        if ( i != curr_state.index_in_prev && (s.nodes_seen & new_seen) == s.nodes_seen && s.time <= new_time+to_node.unload_time && s.cost <= curr_state.cost+cost[from][to] && s.load <= curr_state.load+to_node.load) {
+        if ( i != curr_state.index_in_prev && (s.nodes_seen & new_seen) == s.nodes_seen && s.cost <= curr_state.cost+cost[from][to] && s.load <= curr_state.load+to_node.load) {
           goto LOOPEND;
         }
       }
