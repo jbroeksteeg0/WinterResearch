@@ -160,7 +160,12 @@ template <typename IntType> void shortest_paths() {
       int new_time = std::max(to_node.open_times.first, curr_state.time + dist[from][to]);
       IntType new_seen = curr_state.nodes_seen;
       new_seen |= (((IntType)1) << to_node.index);
-      if (from == to || new_time > to_node.open_times.second || curr_state.load + to_node.load > vehicle_capacity || new_seen == curr_state.nodes_seen)
+
+      const bool skip = from == to || new_time > to_node.open_times.second
+                        || curr_state.load + to_node.load > vehicle_capacity
+                        || new_seen == curr_state.nodes_seen;
+
+      if (skip)
         continue;
 
       State new_state = State(
