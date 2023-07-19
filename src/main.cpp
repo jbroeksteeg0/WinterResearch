@@ -134,10 +134,8 @@ template <typename IntType> void shortest_paths() {
   State<IntType> initial_state(0, 0, 0.0, (IntType)0, 0.0, 0);
   std::vector<std::vector<State<IntType>>> prev_states(n);
 
-  using TI = std::tuple<int, int, int>;
-  std::priority_queue<TI, std::vector<TI>, std::greater<TI>> q;
-  q.push({0, 0, 0});    // {time, node, index}
-  prev_states[0].push_back(initial_state);
+  std::priority_queue<State<IntType>, std::vector<State<IntType>>, std::greater<State<IntType>>> q;
+  q.push(initial_state);    // {time, node, index}
   // ========================== Push the initial state
 
   double ans = 0.0;
@@ -145,9 +143,23 @@ template <typename IntType> void shortest_paths() {
 
   // ========================== Run the BFS
   while (q.size()) {
-    const auto &t = q.top();
-    State<IntType> &curr_state = prev_states[std::get<1>(t)][std::get<2>(t)];
+    const State<IntType> curr_state = q.top();
     q.pop();
+    bool do_continue = false;
+    for (size_t i = 0; i < prev_states[curr_state.node].size(); i++) {
+      const State<IntType> &s = prev_states[curr_state.node][i];
+      if ( i != curr_state.index_in_prev && (s.nodes_seen & curr_state.nodes_seen) == s.nodes_seen && s.cost <= curr_state.cost && s.load <= curr_state.load) {
+        do_continue = true;
+        break;
+      }
+
+      if (s.cost > curr_state.cost)
+        break;
+    }
+    if (do_continue)
+      continue;
+
+    prev_states[curr_state.node].push_back(curr_state);
 
     iterations++;
     if (iterations % 10000 == 0)
@@ -196,8 +208,8 @@ template <typename IntType> void shortest_paths() {
           );
 
           // ========================== If this state has not been dominated, add it
-          q.push({new_state.time, to, i});
-          prev_states[to].insert(prev_states[to].begin() + i, new_state);
+          q.push(new_state);
+          // prev_states[to].insert(prev_states[to].begin() + i, new_state);
 
           goto LOOPEND;
         }
@@ -218,8 +230,7 @@ template <typename IntType> void shortest_paths() {
         );
 
         // ========================== If this state has not been dominated, add it
-        q.push({new_state.time, new_state.node, prev_states[to].size()});
-        prev_states[to].push_back(new_state);
+        q.push(new_state);
       }
     LOOPEND:;
     }
