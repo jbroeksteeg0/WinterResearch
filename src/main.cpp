@@ -145,21 +145,28 @@ template <typename IntType> void shortest_paths() {
   while (q.size()) {
     const State<IntType> curr_state = q.top();
     q.pop();
-    bool do_continue = false;
+    bool do_continue = false, do_add = true;
     for (size_t i = 0; i < prev_states[curr_state.node].size(); i++) {
       const State<IntType> &s = prev_states[curr_state.node][i];
+      // is dominated
       if ( i != curr_state.index_in_prev && (s.nodes_seen & curr_state.nodes_seen) == s.nodes_seen && s.cost <= curr_state.cost && s.load <= curr_state.load) {
         do_continue = true;
         break;
       }
 
-      if (s.cost > curr_state.cost)
+      if (s.cost > curr_state.cost) {    // insert
+        prev_states[curr_state.node].insert(prev_states[curr_state.node].begin() + i, curr_state);
+        do_add = false;
         break;
+      }
     }
     if (do_continue)
       continue;
+    if (do_add) {
+      prev_states[curr_state.node].push_back(curr_state);
+    }
 
-    prev_states[curr_state.node].push_back(curr_state);
+    // prev_states[curr_state.node].push_back(curr_state);
 
     iterations++;
     if (iterations % 10000 == 0)
@@ -173,7 +180,6 @@ template <typename IntType> void shortest_paths() {
     // ========================== Iterate over every destination
     for (int to = 0; to < n; to++) {
       Node &to_node = nodes[to];
-      assert(to_node.unload_time >= 0);
 
       // ========================== Exit early if the new state would not be valid
       int possible_new_time = curr_state.time + dist[from][to];
@@ -194,25 +200,6 @@ template <typename IntType> void shortest_paths() {
         if ( i != curr_state.index_in_prev && (s.nodes_seen & new_seen) == s.nodes_seen && s.cost <= curr_state.cost+cost[from][to] && s.load <= curr_state.load+to_node.load) {
           goto LOOPEND;
         }
-
-        // Insertion sort
-        if (s.cost > curr_state.cost + cost[from][to]) {
-          // New scope so that label works
-          State new_state = State(
-            to,                                  // position
-            new_time + to_node.unload_time,      // time
-            curr_state.load + to_node.load,      // load
-            new_seen,                            // nodes seen
-            curr_state.cost + cost[from][to],    // cost
-            i
-          );
-
-          // ========================== If this state has not been dominated, add it
-          q.push(new_state);
-          // prev_states[to].insert(prev_states[to].begin() + i, new_state);
-
-          goto LOOPEND;
-        }
       }
 
       {
@@ -224,9 +211,6 @@ template <typename IntType> void shortest_paths() {
           new_seen,                            // nodes seen
           curr_state.cost + cost[from][to],    // cost
           prev_states[to].size()
-        );
-        assert(
-          prev_states[to].empty() || curr_state.cost + cost[from][to] >= prev_states[to].back().cost
         );
 
         // ========================== If this state has not been dominated, add it
