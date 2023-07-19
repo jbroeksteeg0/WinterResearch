@@ -3,7 +3,7 @@
 
 template <typename IntType> struct State {
   State() {}
-  State(int node, int16_t time, int16_t load, IntType seen, double cost, int index_in_prev)
+  State(int node, int time, int16_t load, IntType seen, double cost, int index_in_prev)
       : nodes_seen(seen), node(node), time(time), load(load), cost(cost),
         index_in_prev(index_in_prev) {}
   // State(int node, int time, double load, IntType seen, double cost, int index_in_prev)
@@ -31,7 +31,7 @@ template <typename IntType> struct State {
   };
 
   int node;
-  int16_t time;
+  int time;
   int16_t load;
   double cost;
   int index_in_prev;

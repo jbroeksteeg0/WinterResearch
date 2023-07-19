@@ -32,7 +32,7 @@ int vehicle_capacity;
 int num_nodes;
 
 std::array<Node, 101> nodes;
-std::array<std::array<int16_t, 101>, 101> dist;
+std::array<std::array<int, 101>, 101> dist;
 std::array<std::array<double, 101>, 101> cost;
 
 void populate_graph(std::string data_file, int iteration) {
@@ -161,10 +161,11 @@ template <typename IntType> void shortest_paths() {
     // ========================== Iterate over every destination
     for (int to = 0; to < n; to++) {
       Node &to_node = nodes[to];
+      assert(to_node.unload_time >= 0);
 
       // ========================== Exit early if the new state would not be valid
-      int16_t possible_new_time = curr_state.time + dist[from][to];
-      int16_t new_time = std::max(to_node.open_time, possible_new_time);
+      int possible_new_time = curr_state.time + dist[from][to];
+      int new_time = std::max((int)to_node.open_time, possible_new_time);
       IntType new_seen = curr_state.nodes_seen;
       new_seen |= (((IntType)1) << to);
 
@@ -177,7 +178,7 @@ template <typename IntType> void shortest_paths() {
 
       for (size_t i = 0; i < prev_states[to].size(); i++) {
         const State<IntType> &s = prev_states[to][i];
-
+        assert(s.time <= curr_state.time);
         if ( i != curr_state.index_in_prev && (s.nodes_seen & new_seen) == s.nodes_seen && s.cost <= curr_state.cost+cost[from][to] && s.load <= curr_state.load+to_node.load) {
           goto LOOPEND;
         }
@@ -191,18 +192,15 @@ template <typename IntType> void shortest_paths() {
             curr_state.load + to_node.load,      // load
             new_seen,                            // nodes seen
             curr_state.cost + cost[from][to],    // cost
-            prev_states[to].size()
+            i
           );
 
           // ========================== If this state has not been dominated, add it
-          q.push({new_state.time, new_state.node, i});
+          q.push({new_state.time, to, i});
           prev_states[to].insert(prev_states[to].begin() + i, new_state);
 
           goto LOOPEND;
         }
-
-        if (i > 0)
-          assert(prev_states[to][i].cost >= prev_states[to][i - 1].cost);
       }
 
       {
@@ -214,6 +212,9 @@ template <typename IntType> void shortest_paths() {
           new_seen,                            // nodes seen
           curr_state.cost + cost[from][to],    // cost
           prev_states[to].size()
+        );
+        assert(
+          prev_states[to].empty() || curr_state.cost + cost[from][to] >= prev_states[to].back().cost
         );
 
         // ========================== If this state has not been dominated, add it
