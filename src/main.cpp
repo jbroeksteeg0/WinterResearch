@@ -134,9 +134,9 @@ template <typename IntType> void shortest_paths() {
   State<IntType> initial_state(0, 0, 0.0, (IntType)0, 0.0, 0);
   std::vector<std::vector<State<IntType>>> prev_states(n);
 
-  using TI = std::tuple<int, int, int>;
+  using TI = std::tuple<double, int, int>;
   std::priority_queue<TI, std::vector<TI>, std::greater<TI>> q;
-  q.push({0, 0, 0});    // {time, node, index}
+  q.push({0, 0, 0});    // {cost, node, index}
   prev_states[0].push_back(initial_state);
   // ========================== Push the initial state
 
@@ -177,7 +177,7 @@ template <typename IntType> void shortest_paths() {
 
       for (size_t i = 0; i < prev_states[to].size(); i++) {
         const State<IntType> &s = prev_states[to][i];
-        if ( i != curr_state.index_in_prev && (s.nodes_seen & new_seen) == s.nodes_seen && s.cost <= curr_state.cost+cost[from][to] && s.load <= curr_state.load+to_node.load) {
+        if ( i != curr_state.index_in_prev && (s.nodes_seen & new_seen) == s.nodes_seen && s.time <= curr_state.time && s.cost <= curr_state.cost && s.load <= curr_state.load+to_node.load) {
           goto LOOPEND;
         }
       }
@@ -194,7 +194,7 @@ template <typename IntType> void shortest_paths() {
         );
 
         // ========================== If this state has not been dominated, add it
-        q.push({new_state.time, new_state.node, prev_states[to].size()});
+        q.push({new_state.cost, new_state.node, prev_states[to].size()});
         prev_states[to].push_back(new_state);
       }
     LOOPEND:;

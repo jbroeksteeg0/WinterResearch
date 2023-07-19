@@ -20,7 +20,8 @@ template <typename IntType> struct State {
   bool has_been_to(size_t node) const { return nodes_seen & (((IntType)1) << node); }
   bool operator>(const State other) const {
     //
-    return std::tie(time, node, load) > std::tie(other.time, other.node, other.load);
+    return std::tie(cost, time, node, load)
+           > std::tie(other.cost, other.time, other.node, other.load);
   };
   bool operator==(const State<IntType> &other) const = default;
   bool dominates(const State other) const;
