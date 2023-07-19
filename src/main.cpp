@@ -177,13 +177,36 @@ template <typename IntType> void shortest_paths() {
 
       for (size_t i = 0; i < prev_states[to].size(); i++) {
         const State<IntType> &s = prev_states[to][i];
+
         if ( i != curr_state.index_in_prev && (s.nodes_seen & new_seen) == s.nodes_seen && s.cost <= curr_state.cost+cost[from][to] && s.load <= curr_state.load+to_node.load) {
           goto LOOPEND;
         }
+
+        // Insertion sort
+        if (s.cost > curr_state.cost + cost[from][to]) {
+          // New scope so that label works
+          State new_state = State(
+            to,                                  // position
+            new_time + to_node.unload_time,      // time
+            curr_state.load + to_node.load,      // load
+            new_seen,                            // nodes seen
+            curr_state.cost + cost[from][to],    // cost
+            prev_states[to].size()
+          );
+
+          // ========================== If this state has not been dominated, add it
+          q.push({new_state.time, new_state.node, i});
+          prev_states[to].insert(prev_states[to].begin() + i, new_state);
+
+          goto LOOPEND;
+        }
+
+        if (i > 0)
+          assert(prev_states[to][i].cost >= prev_states[to][i - 1].cost);
       }
 
-      // New scope so that label works
       {
+        // Otherwise, insert on the end
         State new_state = State(
           to,                                  // position
           new_time + to_node.unload_time,      // time
