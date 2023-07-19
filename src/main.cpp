@@ -32,7 +32,7 @@ int vehicle_capacity;
 int num_nodes;
 
 std::array<Node, 101> nodes;
-std::array<std::array<int, 101>, 101> dist;
+std::array<std::array<int16_t, 101>, 101> dist;
 std::array<std::array<double, 101>, 101> cost;
 
 void populate_graph(std::string data_file, int iteration) {
@@ -81,6 +81,8 @@ void populate_graph(std::string data_file, int iteration) {
   std::getline(file, curr_line);
 
   int ind = 0;
+
+  std::pair<int, int> positions[101];
   while (std::getline(file, curr_line)) {
     std::string dest_name;
     int x, y;
@@ -91,7 +93,8 @@ void populate_graph(std::string data_file, int iteration) {
     ss = std::stringstream(curr_line);
     ss >> dest_name >> x >> y >> load >> time_start >> time_end >> time_unload;
 
-    nodes[ind] = Node(x, y, {time_start, time_end}, time_unload, load, 0, ind);
+    nodes[ind] = Node(time_start, time_end, time_unload, load, 0);
+    positions[ind] = {x, y};
     ind++;
   }
   num_nodes = ind;
@@ -113,11 +116,11 @@ void populate_graph(std::string data_file, int iteration) {
   for (size_t i = 0; i < num_nodes; i++) {
     for (size_t j = 0; j < num_nodes; j++) {
       if (i != j) {
-        const double dx = nodes[i].x - nodes[j].x;
-        const double dy = nodes[i].y - nodes[j].y;
+        const double dx = positions[i].first - positions[j].first;
+        const double dy = positions[i].second - positions[j].second;
 
         const double node_dist = std::sqrt(dx * dx + dy * dy);
-
+        assert(node_dist < 16000);
         dist[i][j] = ceil(node_dist);
         cost[i][j] = dist[i][j] - nodes[j].bias;
       }
@@ -127,7 +130,7 @@ void populate_graph(std::string data_file, int iteration) {
 
 template <typename IntType> void shortest_paths() {
 
-  int n = num_nodes;
+  const int n = num_nodes;
   State<IntType> initial_state(0, 0, 0.0, (IntType)0, 0.0, 0);
   std::vector<std::vector<State<IntType>>> prev_states(n);
 
@@ -160,12 +163,12 @@ template <typename IntType> void shortest_paths() {
       Node &to_node = nodes[to];
 
       // ========================== Exit early if the new state would not be valid
-
-      int new_time = std::max(to_node.open_times.first, curr_state.time + dist[from][to]);
+      int16_t possible_new_time = curr_state.time + dist[from][to];
+      int16_t new_time = std::max(to_node.open_time, possible_new_time);
       IntType new_seen = curr_state.nodes_seen;
-      new_seen |= (((IntType)1) << to_node.index);
+      new_seen |= (((IntType)1) << to);
 
-      const bool skip = from == to || new_time > to_node.open_times.second
+      const bool skip = from == to || new_time > to_node.close_time
                         || curr_state.load + to_node.load > vehicle_capacity
                         || new_seen == curr_state.nodes_seen;
 
